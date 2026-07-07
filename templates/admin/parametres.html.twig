@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paramètres - Admin</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; display: flex; flex-direction: column; min-height: 100vh; }
+    .navbar { background-color: #1a7a1a; }
+    .navbar-brand, .nav-link { color: white !important; }
+    .nav-link:hover { color: #FFD700 !important; }
+    .card-section { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); background: #ffffff; }
+    footer { background-color: #1a7a1a; color: white; padding: 15px; text-align: center; margin-top: auto; }
+    label { font-weight: 600; color: #1a7a1a; margin-bottom: 0.4rem; }
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg px-4">
+<a class="navbar-brand d-flex align-items-center gap-2" href="/admin">
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmzw3pT2HwvieFTj_nB4nWbEVwWQfkuSpfwMtV7dTLOi7Nm-Ga4-RDR6s&s=10" height="45" alt="Logo">
+    <span class="fw-bold">Cour Suprême du Bénin</span>
+</a>
+<div class="collapse navbar-collapse">
+    <ul class="navbar-nav ms-auto gap-2">
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_index') }}"><i class="bi bi-speedometer2 me-1"></i>Tableau de bord</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_candidats') }}"><i class="bi bi-folder-fill me-1"></i>Candidatures</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_utilisateurs') }}"><i class="bi bi-shield-lock me-1"></i>Utilisateurs</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_parametres') }}"><i class="bi bi-gear-fill me-1"></i>Paramètres</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_criteres') }}"><i class="bi bi-list-check me-1"></i>Critères</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a></li>
+    </ul>
+</div>
+</nav>
+
+<div class="container py-5 flex-grow-1">
+<h4 class="fw-bold mb-2" style="color:#1a7a1a;">
+    <i class="bi bi-gear-fill me-2"></i>Configuration de la Plateforme
+</h4>
+<p class="text-muted mb-4">
+    Modifiez ici les critères éditoriaux et le calendrier institutionnel de l'année en cours sans altérer le code source.
+</p>
+
+{# ===== NOTIFICATIONS FLASH ===== #}
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endfor %}
+
+{{ form_start(form) }}
+
+    {# ===== SECTION DATES & CALENDRIER ===== #}
+    <div class="card card-section p-4 mb-4">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color:#1a7a1a;">
+            <i class="bi bi-calendar3"></i> Calendrier Indicatif des Sessions
+        </h5>
+        <hr class="text-muted opacity-25 mt-0 mb-4">
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border-start border-success border-3">
+                    <label class="form-label text-success fw-bold">Période d'Étude des Dossiers</label>
+                    <div class="row g-2">
+                        <div class="col-6">{{ form_row(form.dateDebutEtude) }}</div>
+                        <div class="col-6">{{ form_row(form.dateFinEtude) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border-start border-warning border-3">
+                    <label class="form-label text-warning-emphasis fw-bold">Phase de Présélection</label>
+                    <div class="row g-2">
+                        <div class="col-6">{{ form_row(form.dateDebutPreselection) }}</div>
+                        <div class="col-6">{{ form_row(form.dateFinPreselection) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border-start border-primary border-3">
+                    <label class="form-label text-primary fw-bold">Grandes Auditions</label>
+                    <div class="row g-2">
+                        <div class="col-6">{{ form_row(form.dateDebutAudition) }}</div>
+                        <div class="col-6">{{ form_row(form.dateFinAudition) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border-start border-danger border-3">
+                    <label class="form-label text-danger fw-bold">Proclamation Officielle des Résultats</label>
+                    <div class="row g-2">
+                        <div class="col-6">{{ form_row(form.dateDebutProclamation) }}</div>
+                        <div class="col-6">{{ form_row(form.dateFinProclamation) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ===== SECTION TEXTES & CRITÈRES ===== #}
+    <div class="card card-section p-4 mb-4">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color:#1a7a1a;">
+            <i class="bi bi-file-earmark-text-fill"></i> Conditions, Contenus & Récompenses
+        </h5>
+        <hr class="text-muted opacity-25 mt-0 mb-4">
+
+        <div class="row g-3">
+            <div class="col-12">
+                {{ form_row(form.quiPeutParticiper) }}
+            </div>
+            <div class="col-md-6">
+                {{ form_row(form.dossierRequis) }}
+                <small class="text-muted d-block mt-1">Sera structuré au format JSON pour l'affichage dynamique.</small>
+            </div>
+            <div class="col-md-6">
+                {{ form_row(form.recompenses) }}
+                <small class="text-muted d-block mt-1">Sera structuré au format JSON pour détailler les dotations.</small>
+            </div>
+        </div>
+    </div>
+
+    {# ===== CONFIGURATION DESIGN & PIED DE PAGE ===== #}
+    <div class="card card-section p-4 mb-4">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color:#1a7a1a;">
+            <i class="bi bi-window-sidebar"></i> Mentions Générales & Footer
+        </h5>
+        <hr class="text-muted opacity-25 mt-0 mb-4">
+        <div class="row">
+            <div class="col-12">
+                {{ form_row(form.footerTexte) }}
+            </div>
+        </div>
+    </div>
+
+    {# ===== ACTION DE SAUVEGARDE ===== #}
+    <div class="d-flex align-items-center gap-3 mt-4">
+        {{ form_widget(form.enregistrer, { attr: { class: 'btn btn-success btn-lg px-4 fw-bold shadow-sm' } }) }}
+        <a href="{{ path('admin_index') }}" class="btn btn-outline-secondary btn-lg px-4">
+            <i class="bi bi-x-circle me-1"></i> Annuler
+        </a>
+    </div>
+
+{{ form_end(form) }}
+</div>
+
+<footer>
+<p class="mb-0">&copy; Cour Suprême du Bénin — Tous droits réservés</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

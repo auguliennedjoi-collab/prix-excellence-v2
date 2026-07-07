@@ -1,0 +1,28 @@
+services:
+  app:
+    container_name: excellence_app
+    restart: unless-stopped
+    environment:
+      SERVER_NAME: ":80"
+      DATABASE_URL: mysql://root:root@database:3306/prix-excellence-cs?charset=utf8mb4
+      MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
+      APP_SECRET: ${APP_SECRET:-234b69481d0ccf93a9c8d372168ebcd0}
+      MAILER_DSN: smtp://shared_mailpit:1025
+      TAILWIND_BINARY: /usr/local/bin/tailwindcss
+      GOTENBERG_DSN: http://shared_gotenberg:3000
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app_net
+      - shared_net
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  app_net:
+    driver: bridge
+  shared_net:
+    external: true

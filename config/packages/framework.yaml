@@ -1,0 +1,23 @@
+framework:
+    secret: "%env(APP_SECRET)%"
+    trusted_proxies: "%env(TRUSTED_PROXIES)%"
+    trusted_hosts: ["%env(TRUSTED_HOSTS)%"]
+    trusted_headers:
+        - "x-forwarded-for"
+        - "x-forwarded-host"
+        - "x-forwarded-proto"
+        - "x-forwarded-prefix"
+    csrf_protection: true
+    session:
+        name: "SESSION_EXCELLENCE"
+        handler_id: null
+        cookie_secure: "auto"
+        cookie_samesite: "lax"
+        cookie_lifetime: 86400 # Le cookie reste valide 24 heures dans le navigateur
+        gc_maxlifetime: 86400 # Le serveur garde la session active 24 heures
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Utilisateurs - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; display: flex; flex-direction: column; min-height: 100vh; }
+        .navbar { background-color: #1a7a1a; }
+        .navbar-brand, .nav-link { color: white !important; }
+        .nav-link:hover { color: #FFD700 !important; }
+        .card-custom { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); background: #ffffff; }
+        .table th { background-color: #1a7a1a; color: white; border: none; }
+        footer { background-color: #1a7a1a; color: white; text-align: center; padding: 15px; margin-top: auto; }
+        .badge-role { font-size: 0.85rem; padding: 0.4em 0.8em; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg px-4">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/admin">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmzw3pT2HwvieFTj_nB4nWbEVwWQfkuSpfwMtV7dTLOi7Nm-Ga4-RDR6s&s=10" height="45" alt="Logo">
+        <span class="fw-bold">Cour Suprême du Bénin</span>
+    </a>
+    <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto gap-2">
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_index') }}"><i class="bi bi-speedometer2 me-1"></i>Tableau de bord</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_candidats') }}"><i class="bi bi-folder-fill me-1"></i>Candidatures</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_utilisateurs') }}"><i class="bi bi-shield-lock-fill me-1"></i>Utilisateurs</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_parametres') }}"><i class="bi bi-gear me-1"></i>Paramètres</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_criteres') }}"><i class="bi bi-list-check me-1"></i>Critères</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a></li>
+        </ul>
+    </div>
+</nav>
+
+{# ===== TOAST NOTIFICATIONS (MESSAGES FLASH) ===== #}
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            {% set bg_class = type == 'success' ? 'success' : (type == 'danger' or type == 'error' ? 'danger' : (type == 'warning' ? 'warning' : 'info')) %}
+            <div class="toast show align-items-center text-white bg-{{ bg_class }} border-0 rounded-3 shadow mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body fs-6">
+                        {% if type == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elseif type == 'danger' or type == 'error' %}
+                            <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fermer"></button>
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+
+<div class="container py-5 flex-grow-1">
+
+    <div class="mb-4">
+        <h4 class="fw-bold mb-1" style="color:#1a7a1a;">
+            <i class="bi bi-person-gear me-2"></i>Gestion des Comptes Utilisateurs
+        </h4>
+        <p class="text-muted">Consultez, modifiez ou ajoutez les profils d'accès internes de l'institution.</p>
+    </div>
+
+    {# ===== TABLEAU DE LA LISTE ===== #}
+    <div class="card card-custom shadow border-0 rounded-4 mb-5">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="p-3 rounded-start" style="width: 70px;">#</th>
+                        <th class="p-3">Nom Complet</th>
+                        <th class="p-3">Adresse Email</th>
+                        <th class="p-3">Habilitation</th>
+                        <th class="p-3 text-end rounded-end px-4" style="width: 140px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td class="p-3 text-muted fw-bold">{{ loop.index }}</td>
+                        <td class="p-3">
+                            <span class="fw-bold text-dark d-block text-uppercase">{{ user.nom }}</span>
+                            <small class="text-muted">{{ user.prenoms }}</small>
+                        </td>
+                        <td class="p-3">{{ user.email }}</td>
+                        <td class="p-3">
+                            {% if 'ROLE_ADMIN' in user.roles %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle badge-role rounded-pill">
+                                    <i class="bi bi-shield-lock-fill me-1"></i>Administrateur
+                                </span>
+                            {% elseif 'ROLE_JURY' in user.roles %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle badge-role rounded-pill">
+                                    <i class="bi bi-gavel me-1"></i>Membre du Jury
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle badge-role rounded-pill">
+                                    {{ user.roles|join(', ') }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="p-3 text-end px-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ path('admin_modifier_utilisateur', {'id': user.id}) }}" class="btn btn-outline-warning btn-sm" title="Modifier le compte">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+
+                                {% if user.id != app.user.id %}
+                                    <a href="{{ path('admin_supprimer_utilisateur', {'id': user.id}) }}" class="btn btn-outline-danger btn-sm" title="Révoquer l'accès"
+                                       onclick="return confirm('Êtes-vous certain de vouloir supprimer définitivement ce compte ?')">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-light btn-sm text-muted" disabled title="Votre session active">
+                                        <i class="bi bi-lock-fill"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center p-5 text-muted">
+                            <i class="bi bi-people display-4 d-block mb-3 opacity-50"></i>
+                            Aucun compte utilisateur configuré dans le système.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ===== FORMULAIRE D'AJOUT RAPIDE ===== #}
+    <h5 class="fw-bold mb-3" style="color:#1a7a1a;">
+        <i class="bi bi-person-plus-fill me-2"></i>Inscrire un nouvel agent
+    </h5>
+
+    <div class="card card-custom border-0 rounded-4 p-2" style="max-width: 600px;">
+        <div class="card-body p-4">
+            <form action="{{ path('admin_ajouter_utilisateur') }}" method="POST">
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Nom de famille</label>
+                        <input type="text" name="nom" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Prénoms</label>
+                        <input type="text" name="prenoms" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Téléphone</label>
+                        <input type="text" name="telephone" class="form-control" placeholder="+229 01XXXXXXXX" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Titre / Fonction</label>
+                        <input type="text" name="titre" class="form-control" placeholder="Ex: Conseiller, Greffier" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Adresse Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="adresse@coursupreme.bj" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Mot de passe initial</label>
+                    <input type="password" name="mot_de_passe" class="form-control" placeholder="••••••••" minlength="8" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Niveau de privilèges / Rôle</label>
+                    <select name="role" class="form-select" required>
+                        <option value="ROLE_JURY">Membre du Jury (Évaluation & Lecture)</option>
+                        <option value="ROLE_ADMIN">Administrateur Système (Contrôle total)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow-sm">
+                    <i class="bi bi-check-circle me-2"></i>Valider l'inscription
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <p class="mb-0">&copy; Cour Suprême du Bénin — Tous droits réservés</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Fermeture automatique des toasts après 5 secondes
+    setTimeout(() => {
+        document.querySelectorAll('.toast').forEach(t => {
+            t.style.transition = 'opacity 0.6s ease';
+            t.style.opacity = '0';
+            setTimeout(() => t.remove(), 600);
+        });
+    }, 5000);
+</script>
+</body>
+</html>

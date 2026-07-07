@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi de Candidature - Cour suprême du Bénin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root { --vert: #1a7a1a; --or: #FFD700; }
+        .text-vert { color: var(--vert) !important; }
+        .btn-vert { background-color: var(--vert); color: white; border-radius: 30px; font-weight: 500; }
+        .btn-vert:hover { background-color: #156315; color: white; }
+
+        /* Styles de la frise chronologique (Timeline) */
+        .track-timeline {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-top: 30px;
+        }
+        .track-timeline::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 20px;
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            z-index: 1;
+        }
+        .timeline-progress {
+            position: absolute;
+            left: 0;
+            top: 20px;
+            height: 4px;
+            background: var(--vert);
+            z-index: 2;
+            transition: width 0.5s ease;
+        }
+        .step-item {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            flex: 1;
+        }
+        .step-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #6c757d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            border: 3px solid #fff;
+            transition: all 0.3s ease;
+        }
+        .step-item.active .step-icon {
+            background: var(--vert);
+            color: white;
+            box-shadow: 0 0 0 3px rgba(26, 122, 26, 0.2);
+        }
+        .step-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 8px;
+            color: #6c757d;
+        }
+        .step-item.active .step-label {
+            color: var(--vert);
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: var(--vert);">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ path('app_home') }}">
+                <i class="bi bi-balance2 me-2" style="color: var(--or);"></i>
+                <strong>Cour suprême du Bénin</strong>
+            </a>
+            <a href="{{ path('app_home') }}" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                <i class="bi bi-house-door me-1"></i> Accueil
+            </a>
+        </div>
+    </nav>
+
+    <main class="container my-5 flex-grow-1">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+                <turbo-frame id="suivi_candidature">
+
+                    <div class="card p-4 border-0 shadow-sm mb-4 bg-white" style="border-radius: 12px;">
+                        <h4 class="fw-bold text-dark text-center mb-3">Suivre l'avancement de votre dossier</h4>
+                        <p class="text-muted text-center small mb-4">Saisissez votre code unique pour consulter l'évolution de votre candidature.</p>
+
+                        {{ form_start(form, {
+                            'attr': {
+                                'class': 'row g-2 justify-content-center',
+                            }
+                        }) }}
+                            <div class="col-md-7">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-key-fill"></i></span>
+                                    {{ form_widget(form.codeSuivi, {
+                                        'attr': {
+                                            'class': 'form-control form-control-lg border-start-0 font-monospace text-uppercase',
+                                            'placeholder': 'Ex: CS-2026-XXXXX',
+                                            'autocomplete': 'off'
+                                        }
+                                    }) }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-vert btn-lg w-100 shadow-sm">
+                                    <i class="bi bi-search me-2"></i> Rechercher
+                                </button>
+                            </div>
+                        {{ form_end(form) }}
+                    </div>
+
+                    {% if error ?? null %}
+                        <div class="alert alert-danger border-0 shadow-sm text-center animate-fade-in" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+                        </div>
+                    {% endif %}
+
+                    {% if form.vars.submitted %}
+
+                    {% if candidature is defined and candidature is not null %}
+                        <div class="card border-0 shadow-sm bg-white overflow-hidden animate-fade-in" style="border-radius: 12px;">
+                            <div class="p-4 border-bottom border-light bg-light">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <div>
+                                        <span class="text-uppercase text-muted fw-bold d-block" style="font-size: 0.75rem; letter-spacing: 1px;">Candidat</span>
+                                        <h5 class="fw-bold mb-0 text-dark">{{ candidature.candidat.nom }} {{ candidature.candidat.prenoms }}</h5>
+                                    </div>
+                                    <div class="text-md-end">
+                                        <span class="text-uppercase text-muted fw-bold d-block" style="font-size: 0.75rem; letter-spacing: 1px;">Code Unique</span>
+                                        <span class="font-monospace fw-bold text-vert fs-5">{{ candidature.codeSuivi }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4">
+                                <div class="text-center mb-5">
+                                    <span class="text-muted d-block small mb-1">Statut actuel du dossier</span>
+                                    <span class="badge fs-6 px-4 py-2 rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        {{ candidature.statutTraitement ? candidature.statutTraitement.label : 'Reçu' }}
+                                    </span>
+                                </div>
+
+                                {# Calcul de progression de la frise #}
+                                {% set progress = 20 %}
+                                {% if candidature.statutTraitement and candidature.statutTraitement.value == 'en_verification' %}{% set progress = 50 %}
+                                {% elseif candidature.statutTraitement and candidature.statutTraitement.value == 'verifie' %}{% set progress = 80 %}
+                                {% elseif candidature.statutTraitement and candidature.statutTraitement.value == 'traite' %}{% set progress = 100 %}
+                                {% endif %}
+
+                                <div class="track-timeline mb-4 px-3">
+                                    <div class="timeline-progress" style="width: {{ progress }}%;"></div>
+
+                                    <div class="step-item active">
+                                        <div class="step-icon"><i class="bi bi-file-earmark-check"></i></div>
+                                        <div class="step-label">Dépôt enregistré</div>
+                                    </div>
+
+                                    <div class="step-item {% if progress >= 50 %}active{% endif %}">
+                                        <div class="step-icon"><i class="bi bi-search"></i></div>
+                                        <div class="step-label">Vérification</div>
+                                    </div>
+
+                                    <div class="step-item {% if progress >= 80 %}active{% endif %}">
+                                        <div class="step-icon"><i class="bi bi-journal-check"></i></div>
+                                        <div class="step-label">Jury d'Évaluation</div>
+                                    </div>
+
+                                    <div class="step-item {% if progress == 100 %}active{% endif %}">
+                                        <div class="step-icon"><i class="bi bi-trophy"></i></div>
+                                        <div class="step-label">Délibération</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% elseif candidature is defined and candidature is null %}
+                        <div class="card border-0 shadow-sm bg-white p-5 text-center animate-fade-in" style="border-radius: 12px;">
+                            <div class="mb-3 text-danger">
+                                <i class="bi bi-file-earmark-x style-danger" style="font-size: 3.5rem;"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-2">Aucun dossier trouvé</h5>
+
+                        </div>
+                    {% endif %}
+                    {% endif %}
+
+
+                </turbo-frame>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-white text-center py-3 mt-auto border-top" style="background-color: var(--vert); border-color: rgba(255,255,255,0.1) !important;">
+        <div class="container">
+            <p class="mb-0 small text-white-50">Secrétariat général de la Cour suprême — République du Bénin</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

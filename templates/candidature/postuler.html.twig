@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Déposer un dossier - Cour suprême du Bénin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-light pb-5">
+
+    <nav class="navbar navbar-dark bg-dark mb-4 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ path('app_home') }}"><i class="bi bi-arrow-left me-2"></i> Retour à l'accueil</a>
+            <span class="navbar-text text-white">Formulaire de Candidature Officiel</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+                <div class="card border-0 shadow-sm mb-4 bg-white">
+                    <div class="card-body p-4 border-start border-primary border-4">
+                        <small class="text-uppercase fw-bold text-muted">Thématique de l'édition {{ edition.annee }}</small>
+                        <h5 class="fw-bold text-dark mt-1 mb-0">« {{ edition.theme }} »</h5>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm p-4 bg-white">
+                    <h3 class="fw-bold mb-4 text-center text-primary"><i class="bi bi-send-fill me-2"></i>Soumettre mon dossier</h3>
+
+                    <div class="container mt-3">
+                        {% for label, messages in app.flashes %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+
+                    {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+                    <h5 class="border-bottom pb-2 mb-3 text-secondary">1. Informations Personnelles</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nom</label>
+                            {{ form_widget(form.nom, {'attr': {'class': form.nom.vars.errors|length > 0 ? 'form-control is-invalid' : 'form-control'}}) }}
+                            <div class="invalid-feedback">{{ form_errors(form.nom) }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Prénoms</label>
+                            {{ form_widget(form.prenoms, {'attr': {'class': form.prenoms.vars.errors|length > 0 ? 'form-control is-invalid' : 'form-control'}}) }}
+                            <div class="invalid-feedback">{{ form_errors(form.prenoms) }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Adresse Électronique (Email)</label>
+                            {{ form_widget(form.email, {'attr': {'class': form.email.vars.errors|length > 0 ? 'form-control is-invalid' : 'form-control'}}) }}
+                            <div class="invalid-feedback">{{ form_errors(form.email) }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Numéro de Téléphone</label>
+                            {{ form_widget(form.telephone, {'attr': {'class': form.telephone.vars.errors|length > 0 ? 'form-control is-invalid' : 'form-control'}}) }}
+                            <div class="invalid-feedback">{{ form_errors(form.telephone) }}</div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Niveau d'études / Profil</label>
+                            {{ form_widget(form.niveauEtude, {'attr': {'class': 'form-select'}}) }}
+                        </div>
+                    </div>
+
+                    <h5 class="border-bottom pb-2 mb-3 text-secondary">2. Pièces Jointes</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 mb-2">
+                            <label class="form-label fw-semibold">{{ form_label(form.contributionFile) }}</label>
+                            {{ form_widget(form.contributionFile, {'attr': {'class': form.contributionFile.vars.errors|length > 0 ? 'form-control is-invalid' : 'form-control'}}) }}
+                            <div class="invalid-feedback">{{ form_errors(form.contributionFile) }}</div>
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label fw-semibold">{{ form_label(form.resumeFile) }}</label>
+                            {{ form_widget(form.resumeFile, {'attr': {'class': form.resumeFile.vars.errors|length > 0 ? 'form-control is-invalid' : 'form-control'}}) }}
+                            <div class="invalid-feedback">{{ form_errors(form.resumeFile) }}</div>
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label fw-semibold">{{ form_label(form.cvFile) }}</label>
+                            {{ form_widget(form.cvFile, {'attr': {'class': form.cvFile.vars.errors|length > 0 ? 'form-control is-invalid' : 'form-control'}}) }}
+                            <div class="invalid-feedback">{{ form_errors(form.cvFile) }}</div>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-semibold">{{ form_label(form.identityFile) }}</label>
+                            {{ form_widget(form.identityFile, {'attr': {'class': form.identityFile.vars.errors|length > 0 ? 'form-control is-invalid' : 'form-control'}}) }}
+                            <div class="invalid-feedback">{{ form_errors(form.identityFile) }}</div>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-semibold">{{ form_label(form.diplomaFile) }}</label>
+                            {{ form_widget(form.diplomaFile, {'attr': {'class': form.diplomaFile.vars.errors|length > 0 ? 'form-control is-invalid' : 'form-control'}}) }}
+                            <div class="invalid-feedback">{{ form_errors(form.diplomaFile) }}</div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="bi bi-check-circle-fill me-2"></i> Transmettre définitivement le dossier
+                        </button>
+                    </div>
+
+                    {{ form_end(form) }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+    async function compterPagesPDF(fichier) {
+        if (!fichier || fichier.type !== "application/pdf") {
+            return 0;
+        }
+
+        try {
+            const arrayBuffer = await fichier.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            return pdf.numPages;
+        } catch (e) {
+            console.error("Erreur lecture PDF :", e);
+            return -1; // signal d'erreur, fichier illisible
+        }
+    }
+
+    function gererErreurChamp(inputElement, messageErreur) {
+        let alerte = inputElement.nextElementSibling;
+        if (!alerte || !alerte.classList.contains('invalid-feedback')) {
+            alerte = inputElement.parentNode.querySelector('.invalid-feedback');
+        }
+
+        if (messageErreur) {
+            inputElement.classList.add('is-invalid');
+            inputElement.value = '';
+            if (alerte) {
+                alerte.style.display = 'block';
+                alerte.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i> ${messageErreur}`;
+            }
+        } else {
+            inputElement.classList.remove('is-invalid');
+            if (alerte) {
+                alerte.style.display = '';
+                alerte.innerHTML = '';
+            }
+        }
+    }
+
+    function afficherChargement(inputElement, actif) {
+        let spinner = inputElement.parentNode.querySelector('.spinner-verification');
+        if (actif) {
+            if (!spinner) {
+                spinner = document.createElement('div');
+                spinner.className = 'spinner-verification text-muted small mt-1';
+                spinner.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Vérification du fichier...';
+                inputElement.parentNode.appendChild(spinner);
+            }
+        } else if (spinner) {
+            spinner.remove();
+        }
+    }
+
+    function attacherVerificationPages(selector, { min = null, max = null, messageHorsLimite }) {
+        const input = document.querySelector(selector);
+        if (!input) return;
+
+        input.addEventListener('change', async function () {
+            const fichier = this.files[0];
+            if (!fichier || fichier.type !== "application/pdf") {
+                gererErreurChamp(this, null);
+                return;
+            }
+
+            afficherChargement(this, true);
+            const pages = await compterPagesPDF(fichier);
+            afficherChargement(this, false);
+
+            if (pages === -1) {
+                gererErreurChamp(this, "Le fichier PDF semble corrompu ou illisible.");
+                return;
+            }
+
+            const horsLimite = (min !== null && pages < min) || (max !== null && pages > max);
+            if (horsLimite) {
+                gererErreurChamp(this, messageHorsLimite(pages));
+            } else {
+                gererErreurChamp(this, null);
+            }
+        });
+    }
+
+    attacherVerificationPages('input[type="file"][id*="contributionFile"]', {
+        min: 25,
+        max: 35,
+        messageHorsLimite: (pages) => `La contribution doit avoir entre 25 et 35 pages (Votre fichier fait ${pages} pages).`
+    });
+
+    attacherVerificationPages('input[type="file"][id*="resumeFile"]', {
+        max: 1,
+        messageHorsLimite: (pages) => `Le résumé ne doit pas dépasser 1 page (Votre fichier fait ${pages} pages).`
+    });
+</script>
+
+</body>
+</html>

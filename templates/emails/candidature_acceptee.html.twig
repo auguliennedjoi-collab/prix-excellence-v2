@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <meta charset="UTF-8">
+   <title>Mise à jour de votre candidature - Cour suprême du Bénin</title>
+</head>
+
+<body style="margin:0; padding:0; background-color:#F7F5F0; font-family: Arial, sans-serif;">
+   <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
+      <tr>
+         <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0"
+               style="background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.05);">
+
+               {# Header avec le Vert de la charte #}
+               <tr>
+                  <td style="background:#1a7a1a; padding:25px; text-align:center;">
+                     <h1 style="margin:0; color:white; font-size:22px;">Suivi de votre Candidature</h1>
+                  </td>
+               </tr>
+
+               {# Corps du message #}
+               <tr>
+                  <td style="padding:30px; color:#3D4451;">
+                     <p style="margin-top:0;">Bonjour <strong>{{ candidat.nom }} {{ candidat.prenoms }}</strong>,</p>
+
+                     <p>
+                        Le statut de votre dossier pour le **Prix d'Excellence {{ candidature.edition ? candidature.edition.annee : '2026' }}** a été mis à jour par le Secrétariat Général de la Cour suprême.
+                     </p>
+
+                     {# Encadré Statut Dynamique #}
+                     <div style="background:rgba(26, 122, 26, 0.06); border-left:4px solid #1a7a1a; padding:15px; border-radius:6px; margin:25px 0;">
+                        <strong style="color:#1a7a1a;">Statut actuel :</strong>
+                        {{ candidature.statutTraitement ? candidature.statutTraitement.label : 'Reçu et enregistré' }}
+                     </div>
+
+                     {# Rappel du Code Unique en Or/Jaune discret style tiretés #}
+                     <div style="background:#f9fafb; border:1px solid #e5e7eb; padding:15px; border-radius:6px; margin:20px 0; text-align:center;">
+                        <p style="margin:0 0 8px 0; font-weight:600; color:#3D4451; font-size:14px; text-uppercase; letter-spacing:0.5px;">Votre Code de Suivi Unique :</p>
+                        <div style="display:inline-block; padding:8px 18px; font-size:18px; font-family: monospace; background:rgba(255, 215, 0, 0.15); border:2px dashed #FFD700; border-radius:8px; color:#1a7a1a; font-weight:bold;">
+                           {{ candidature.codeSuivi }}
+                        </div>
+                     </div>
+
+                     {# Bouton d'action vers la route de suivi #}
+                     <div style="text-align:center; margin:30px 0;">
+                        <a href="{{ url('app_suivi') }}"
+                           style="display:inline-block; padding:12px 24px; background:#1a7a1a; color:white; text-decoration:none; border-radius:30px; font-weight:600; box-shadow:0 4px 6px rgba(26,122,26,0.2);">
+                           <i class="bi bi-search"></i> Consulter l'avancement en ligne
+                        </a>
+                     </div>
+
+                     <p style="margin-top:30px; font-size:14px; color:#6b7280;">
+                        Merci pour votre participation au rayonnement de la recherche juridique.
+                     </p>
+                  </td>
+               </tr>
+
+               {# Footer de l'e-mail #}
+               <tr>
+                  <td style="background:#F7F5F0; padding:20px; text-align:center; font-size:12px; color:#6b7280; border-top:1px solid #e5e7eb;">
+                     © {{ "now"|date("Y") }} - Secrétariat général de la Cour suprême du Bénin<br>
+                     <span style="font-size:11px; color:#9ca3af;">Ceci est un e-mail automatique, merci de ne pas y répondre.</span>
+                  </td>
+               </tr>
+
+            </table>
+         </td>
+      </tr>
+   </table>
+</body>
+
+</html>

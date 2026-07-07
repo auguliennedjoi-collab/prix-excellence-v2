@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plateforme du Prix d'Excellence {{ edition ? edition.annee : '2026' }} - Cour suprême du Bénin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root { --vert: #1a7a1a; --or: #FFD700; }
+        .hero-section {
+            background: linear-gradient(135deg, var(--vert) 0%, #2d8a2d 100%);
+            color: white;
+            padding: 10px 0 70px 0;
+        }
+        .feature-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background-color: rgba(26, 122, 26, 0.1);
+            color: var(--vert);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .timeline-steps {
+            border-left: 3px solid var(--vert);
+            padding-left: 20px;
+            position: relative;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -29px;
+            top: 5px;
+            background: var(--vert);
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+        }
+        .btn-callout {
+            background-color: var(--or);
+            color: var(--vert);
+            font-weight: bold;
+            padding: 15px 40px;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+        .btn-callout:hover {
+            background-color: #e6c200;
+            transform: scale(1.05);
+            color: var(--vert);
+        }
+        .text-or { color: var(--or) !important; }
+        .text-vert { color: var(--vert) !important; }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-80">
+    <!-- Messages de confirmation (Flash) -->
+    <div class="container">
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <!-- Section Hero : Présentation Majeure -->
+    <header class="hero-section text-center">
+
+    <!-- Navbar -->
+            <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: var(--vert);">
+                <div class="container d-flex justify-content-between align-items-center">
+                    <a class="navbar-brand d-flex align-items-center" href="{{ path('app_home') }}">
+                        <i class="bi bi-balance2 me-2 text-or"></i>
+                        <strong>Cour suprême du Bénin</strong>
+                    </a>
+
+                <a class="btn btn-secondary text-white-50 text-uppercase" href="{{ path('app_suivi') }}">Suivre ma candidature</a>
+                </div>
+            </nav>
+        <div class="container px-4">
+            <span class="badge mb-3 fw-bold px-3 py-2 text-uppercase" style="background-color: var(--or); color: var(--vert);">
+                Édition {{ edition ? edition.annee : '2026' }}
+            </span>
+            <h1 class="display-4 fw-bold mb-3">Prix d'Excellence « Droit - Justice - Paix »</h1>
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-9">
+                    <p class="lead text-white-50 fs-4 mb-4">
+                        Thème officiel : <br>
+                        <span class="text-white fw-semibold">« {{ edition ? edition.theme : 'Le caractère suspensif du pourvoi en cassation en matière foncière : entre sécurisation du droit de propriété foncière et efficacité de la justice' }} »</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Bouton d'action principal dynamique -->
+            <div class="mt-4">
+                {% if edition and date() <= edition.dateCloture %}
+                    <a href="{{ path('app_candidature_postuler') }}" class="btn btn-callout shadow-sm btn-lg">
+                        <i class="bi bi-file-earmark-arrow-up-fill me-2"></i> Déposer ma candidature
+                    </a>
+                {% else %}
+                    <button class="btn btn-secondary btn-lg rounded-pill px-4" disabled>
+                        <i class="bi bi-lock-fill me-2"></i> Les dépôts sont clôturés pour cette édition
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Corps de la page : Informations & Processus -->
+    <main class="container my-5 flex-grow-1">
+
+        <!-- Section "Comment ça fonctionne ?" -->
+        <div class="row g-4 text-center mb-5">
+            <h2 class="fw-bold text-center mb-4 text-dark">Une démarche simple en 3 étapes</h2>
+            <div class="col-md-4">
+                <div class="p-3">
+                    <div class="feature-icon"><i class="bi bi-journal-text"></i></div>
+                    <h5>1. Préparer son dossier</h5>
+                    <p class="text-muted small">Rassemblez votre contribution (25 à 35 pages), votre CV, vos pièces justificatives et résumé.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3">
+                    <div class="feature-icon"><i class="bi bi-cloud-upload"></i></div>
+                    <h5>2. Soumettre en ligne</h5>
+                    <p class="text-muted small">Remplissez le formulaire unique sur cette plateforme sans besoin de créer de compte.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3">
+                    <div class="feature-icon"><i class="bi bi-envelope-check"></i></div>
+                    <h5>3. Suivi par e-mail</h5>
+                    <p class="text-muted small">Un e-mail de confirmation vous est envoyé dès validation par le secrétariat général.</p>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-5">
+
+
+<div class="row g-4 mt-2">
+            {# Carte 1 : Qui peut participer #}
+            <div class="col-md-4">
+                <div class="card p-4 h-100 border-0 shadow-sm bg-white text-center">
+                    <div class="feature-icon mx-auto"><i class="bi bi-people-fill"></i></div>
+                    <h5 class="fw-bold text-dark">Qui peut participer ?</h5>
+                    <p class="text-muted small mb-0">
+                        {{ parametre ? parametre.quiPeutParticiper|nl2br : 'Jeunes chercheurs, magistrats, avocats, doctorants, enseignants-chercheurs.' }}
+                    </p>
+                </div>
+            </div>
+
+            {# Carte 2 : Dossier requis #}
+            <div class="col-md-4">
+                <div class="card p-4 h-100 border-0 shadow-sm bg-white text-center">
+                    <div class="feature-icon mx-auto"><i class="bi bi-file-earmark-text-fill"></i></div>
+                    <h5 class="fw-bold text-dark">Dossier requis</h5>
+                    <ul class="text-start text-muted small ps-3 mb-0">
+                        {% if parametre and parametre.dossierRequis is iterable %}
+                            {% for item in parametre.dossierRequis %}
+                                <li>{{ item }}</li>
+                            {% else %}
+                                <li>Contribution originale (25 à 35 pages), résumé d'une page, CV, copie légalisée du diplôme et pièce d'identité.</li>
+                            {% endfor %}
+                        {% else %}
+                            <li>Contribution originale (25 à 35 pages), résumé d'une page, CV, copie légalisée du diplôme et pièce d'identité.</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            {# Carte 3 : Récompenses ou Clôture #}
+            <div class="col-md-4">
+                <div class="card p-4 h-100 border-0 shadow-sm bg-white text-center">
+                    <div class="feature-icon mx-auto"><i class="bi bi-trophy-fill"></i></div>
+                    <h5 class="fw-bold text-dark">Récompenses</h5>
+                    <ul class="text-start text-muted small ps-3 mb-0">
+                        {% if parametre and parametre.recompenses is iterable and parametre.recompenses|length > 0 %}
+                            {% for recompense in parametre.recompenses %}
+                                <li>{{ recompense }}</li>
+                            {% endfor %}
+                        {% else %}
+                            <li>Prix d'excellence financier, publication de l'œuvre et trophées officiels.</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-4">
+            <div class="col-lg-6">
+                <div class="alert alert-danger border-0 h-100 d-flex align-items-center mb-0 shadow-sm justify-content-center" role="alert">
+                    <div>
+                        <i class="bi bi-clock-fill me-2 fs-5"></i>
+                        Clôture stricte des dépôts : <br>
+                        <strong>
+                            {{ edition and edition.dateCloture
+                                ? edition.dateCloture|format_datetime(locale='fr', pattern="EEEE dd MMMM Y 'à' HH'h'mm")
+                                : 'Vendredi 25 septembre 2026 à 17h00'
+                            }}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card p-4 border-0 shadow-sm bg-white">
+                    <h6 class="fw-bold mb-3 text-vert"><i class="bi bi-calendar3-event-fill me-2"></i>Calendrier du concours</h6>
+                    <div class="timeline-steps">
+                        <div class="timeline-item">
+                            <h6 class="fw-bold mb-0" style="font-size:0.9rem;">Étude des contributions</h6>
+                            <small class="text-muted">
+                                {% if parametre and parametre.dateDebutEtude and parametre.dateFinEtude %}
+                                    Du {{ parametre.dateDebutEtude|date('d M.') }} au {{ parametre.dateFinEtude|date('d M. Y') }}
+                                {% else %}
+                                    Du lundi 28 septembre au vendredi 09 octobre 2026
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="timeline-item">
+                            <h6 class="fw-bold mb-0" style="font-size:0.9rem;">Présélection des finalistes</h6>
+                            <small class="text-muted">
+                                {{ parametre and parametre.dateDebutPreselection ? 'Le ' ~ parametre.dateDebutPreselection|date('d M. Y') : 'Vendredi 09 octobre 2026' }}
+                            </small>
+                        </div>
+                        <div class="timeline-item">
+                            <h6 class="fw-bold mb-0" style="font-size:0.9rem;">Auditions & Proclamation</h6>
+                            <small class="text-vert fw-bold">
+                                {{ parametre and parametre.dateDebutProclamation ? 'Le ' ~ parametre.dateDebutProclamation|date('d M. Y') : 'Vendredi 16 octobre 2026' }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-white text-center py-4 mt-auto border-top" style="background-color: var(--vert); border-color: rgba(255,255,255,0.1) !important;">
+        <div class="container">
+            <p class="mb-1 text-white-50">{{ parametre and parametre.footerTexte ? parametre.footerTexte : 'Secrétariat général de la Cour suprême — Porto-Novo' }}</p>
+            <p class="mb-0 small text-white-50">Contact officiel : <a href="mailto:institution@coursupreme.bj" class="text-or text-decoration-none">institution@coursupreme.bj</a> | <a href="https://www.coursupreme.bj" target="_blank" class="text-white text-decoration-none ms-2"><i class="bi bi-globe me-1"></i>www.coursupreme.bj</a></p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

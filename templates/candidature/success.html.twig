@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dépôt Réussi - Cour suprême du Bénin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root { --vert: #1a7a1a; --or: #FFD700; }
+        .text-vert { color: var(--vert) !important; }
+        .text-or { color: var(--or) !important; }
+        .btn-vert { background-color: var(--vert); color: white; font-weight: 500; }
+        .btn-vert:hover { background-color: #156315; color: white; }
+    </style>
+</head>
+<body class="bg-light vh-100 d-flex align-items-center">
+    <div class="container text-center">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card p-5 border-0 shadow-sm bg-white" style="border-radius: 16px;">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle-fill text-vert" style="font-size: 4rem;"></i>
+                    </div>
+                    <h2 class="fw-bold text-dark mb-3">Transmission Réussie !</h2>
+                    <p class="text-muted small">
+                        Merci M./Mme <strong class="text-dark">{{ candidat.nom }} {{ candidat.prenoms }}</strong>. Votre dossier pour le Prix d'Excellence {{ edition ? edition.annee : '2026' }} a été transmis avec succès au Secrétariat Général de la Cour suprême.
+                    </p>
+
+                    <div class="p-3 rounded my-4 border" style="background-color: rgba(26, 122, 26, 0.04); border-color: rgba(26, 122, 26, 0.15) !important;">
+                        <small class="text-uppercase fw-bold text-muted d-block mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">Votre Code de Suivi Unique</small>
+                        <span class="fs-4 fw-mono text-vert font-monospace fw-bold">{{ codeSuivi }}</span>
+                    </div>
+
+                    <p class="small text-muted mb-4">
+                        Conservez précieusement ce code. Il vous permettra de suivre en temps réel l'avancement de l'étude de votre contribution par le jury.
+                    </p>
+
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="{{ path('app_home') }}" class="btn btn-outline-secondary px-3">
+                            <i class="bi bi-house-door-fill me-2"></i> Accueil
+                        </a>
+                        {# Remplacer 'app_suivi' par le nom exact de votre route de suivi dans votre contrôleur #}
+                        <a href="{{ path('app_suivi') }}" class="btn btn-vert px-3 shadow-sm">
+                            <i class="bi bi-search me-2"></i> Suivre mon dossier
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,153 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion - Cour suprême du Bénin{% endblock %}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block body %}
+<style>
+    :root { --vert: #1a7a1a; --or: #FFD700; }
+
+    /* On force un contexte propre isolé du reste du site */
+    .login-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #f4f4f4;
+        display: flex;
+        flex-direction: column;
+        z-index: 9999; /* Passe au-dessus de tout bug du layout parent */
+        overflow-y: auto;
+    }
+
+    .text-vert { color: var(--vert) !important; }
+    .btn-vert { background-color: var(--vert); color: white; border-radius: 30px; font-weight: 500; transition: all 0.2s ease; }
+    .btn-vert:hover { background-color: #156315; color: white; transform: translateY(-1px); }
+    .focus-vert:focus { border-color: var(--vert) !important; box-shadow: 0 0 0 0.25rem rgba(26, 122, 26, 0.25) !important; }
+
+    .login-content {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+    }
+</style>
+
+<div class="login-wrapper">
+
+    {# ===== NAVBAR STRICTEMENT EN HAUT ===== #}
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm w-100 flex-shrink-0" style="background-color: var(--vert);">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ path('app_home') }}">
+                <i class="bi bi-balance2 me-2" style="color: var(--or);"></i>
+                <strong>Cour suprême du Bénin</strong>
+            </a>
+            <a href="{{ path('app_home') }}" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                <i class="bi bi-house-door me-1"></i> Accueil
+            </a>
+        </div>
+    </nav>
+
+    {# ===== ZONE CENTRALE DE LA CARTE ===== #}
+    <div class="login-content container">
+        <div class="row w-100 justify-content-center m-0">
+            <div class="col-12" style="max-width: 450px;">
+
+                <div class="card border-0 shadow-sm p-3 bg-white mb-4" style="border-radius: 12px;">
+                    <div class="card-body">
+                        <h3 class="fw-bold mb-4 text-center text-dark">
+                            <i class="bi bi-shield-lock-fill text-vert me-2"></i>Connexion
+                        </h3>
+
+                        <form method="post">
+                            {# Alertes d'erreur #}
+                            {% if error %}
+                                <div class="alert alert-danger border-0 shadow-sm mb-4 d-flex align-items-center small" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                                    <div>{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                                </div>
+                            {% endif %}
+
+                            {# État connecté #}
+                            {% if app.user %}
+                                <div class="alert alert-info border-0 shadow-sm mb-4 d-flex justify-content-between align-items-center small" role="alert">
+                                    <span><i class="bi bi-info-circle-fill me-2"></i>Connecté : <strong>{{ app.user.userIdentifier }}</strong></span>
+                                    <a href="{{ logout_path() }}" class="btn btn-sm btn-link text-decoration-underline p-0 text-dark">Déconnexion</a>
+                                </div>
+                            {% endif %}
+
+                            {# Champ Email #}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted small" for="email">Adresse Électronique</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-envelope"></i></span>
+                                    <input type="email"
+                                           value="{{ last_username }}"
+                                           name="_email"
+                                           id="email"
+                                           placeholder="votre@email.com"
+                                           class="form-control form-control-lg border-start-0 focus-vert"
+                                           autocomplete="email"
+                                           required
+                                           autofocus>
+                                </div>
+                            </div>
+
+                            {# Champ Mot de passe #}
+                            <div class="mb-4" data-controller="password-toggle">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label fw-semibold text-muted small mb-0" for="password">Mot de passe</label>
+                                    <a href="{{ path('app_forgot_password_request') }}" class="text-decoration-none small text-muted">Mot de passe oublié ?</a>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-lock"></i></span>
+                                    <input type="password"
+                                           name="_password"
+                                           id="password"
+                                           placeholder="••••••••"
+                                           class="form-control form-control-lg border-start-0 focus-vert"
+                                           autocomplete="current-password"
+                                           data-password-toggle-target="input"
+                                           required>
+                                    <button type="button"
+                                            class="btn btn-outline-secondary border-start-0 bg-white text-muted"
+                                            data-action="click->password-toggle#toggle"
+                                            tabindex="-1"
+                                            style="border-color: #dee2e6;">
+                                        <i class="bi bi-eye" data-password-toggle-target="icon"></i>
+                                        <i class="bi bi-eye-slash d-none" data-password-toggle-target="icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {# Se souvenir de moi #}
+                            <div class="form-check mb-4">
+                                <input type="checkbox" name="_remember_me" id="remember_me" class="form-check-input focus-vert" style="cursor: pointer;" checked>
+                                <label class="form-check-label text-muted small user-select-none" for="remember_me" style="cursor: pointer;">
+                                    Se souvenir de moi sur cet appareil
+                                </label>
+                            </div>
+
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                            {# Bouton Submit #}
+                            <div class="d-grid mt-2">
+                                <button class="btn btn-vert btn-lg shadow-sm w-100" type="submit">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>Accéder à mon espace
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+                <p class="text-center text-muted small mb-0">Secrétariat général de la Cour suprême — République du Bénin</p>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

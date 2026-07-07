@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Critères d'évaluation - Admin</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; display: flex; flex-direction: column; min-height: 100vh; }
+    .navbar { background-color: #1a7a1a; }
+    .navbar-brand, .nav-link { color: white !important; }
+    .nav-link:hover { color: #FFD700 !important; }
+    .card-section { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); background: #ffffff; }
+    footer { background-color: #1a7a1a; color: white; padding: 15px; text-align: center; margin-top: auto; }
+    label { font-weight: 600; color: #1a7a1a; margin-bottom: 0.4rem; }
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg px-4">
+<a class="navbar-brand d-flex align-items-center gap-2" href="/admin">
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmzw3pT2HwvieFTj_nB4nWbEVwWQfkuSpfwMtV7dTLOi7Nm-Ga4-RDR6s&s=10" height="45" alt="Logo">
+    <span class="fw-bold">Cour Suprême du Bénin</span>
+</a>
+<div class="collapse navbar-collapse">
+    <ul class="navbar-nav ms-auto gap-2">
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_index') }}"><i class="bi bi-speedometer2 me-1"></i>Tableau de bord</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_candidats') }}"><i class="bi bi-folder-fill me-1"></i>Candidatures</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_utilisateurs') }}"><i class="bi bi-shield-lock me-1"></i>Utilisateurs</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_criteres') }}"><i class="bi bi-list-check me-1"></i>Critères</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('admin_parametres') }}"><i class="bi bi-gear-fill me-1"></i>Paramètres</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a></li>
+    </ul>
+</div>
+</nav>
+
+<div class="container py-5 flex-grow-1">
+<h4 class="fw-bold mb-2" style="color:#1a7a1a;">
+    <i class="bi bi-list-check me-2"></i>Critères d'évaluation
+</h4>
+<p class="text-muted mb-4">
+    Gérez ici les critères écrits utilisés par le jury, ainsi que leurs sous-critères éventuels.
+</p>
+
+{# ===== NOTIFICATIONS FLASH ===== #}
+{% for type, messages in app.flashes %}
+    {% for message in messages %}
+        {% set badgeType = type == 'error' ? 'danger' : type %}
+        <div class="alert alert-{{ badgeType }} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endfor %}
+
+{# ===== FORMULAIRE D'AJOUT ===== #}
+<div class="card card-section p-4 mb-4">
+    <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color:#1a7a1a;">
+        <i class="bi bi-plus-circle"></i> Ajouter un critère
+    </h5>
+    <hr class="text-muted opacity-25 mt-0 mb-4">
+
+    <form method="post" action="{{ path('admin_ajouter_critere') }}" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Nom du critère</label>
+            <input type="text" name="nom" class="form-control" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Note maximale</label>
+            <input type="number" step="0.01" min="0" name="note_max" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Critère parent (optionnel)</label>
+            <select name="parent_id" class="form-select">
+                <option value="">— Aucun (critère principal) —</option>
+                {% for critere in criteres %}
+                    <option value="{{ critere.id }}">{{ critere.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Description (optionnel)</label>
+            <input type="text" name="description" class="form-control">
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle me-1"></i>Ajouter
+            </button>
+        </div>
+    </form>
+</div>
+
+{# ===== LISTE DES CRITÈRES ===== #}
+<div class="card card-section p-0 mb-4">
+    <div class="p-4 pb-0">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color:#1a7a1a;">
+            <i class="bi bi-list-ol"></i> Liste des critères
+        </h5>
+        <hr class="text-muted opacity-25 mt-0">
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Nom</th>
+                    <th style="width:120px;">Note max</th>
+                    <th>Description</th>
+                    <th style="width:220px;" class="pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for critere in criteres %}
+                    <tr class="fw-bold">
+                        <td class="ps-4">{{ critere.nom }}</td>
+                        <td>{{ critere.noteMax }}</td>
+                        <td>{{ critere.description ?? '—' }}</td>
+                        <td class="pe-4">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal" data-bs-target="#modifier-{{ critere.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <a href="{{ path('admin_supprimer_critere', {id: critere.id}) }}"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Supprimer ce critère et ses sous-critères éventuels ?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+
+                    {% for enfant in critere.enfants %}
+                        <tr>
+                            <td class="ps-5">— {{ enfant.nom }}</td>
+                            <td>{{ enfant.noteMax }}</td>
+                            <td>{{ enfant.description ?? '—' }}</td>
+                            <td class="pe-4">
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="modal" data-bs-target="#modifier-{{ enfant.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <a href="{{ path('admin_supprimer_critere', {id: enfant.id}) }}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Supprimer ce sous-critère ?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+
+                        {# Modal de modification pour l'enfant #}
+                        <div class="modal fade" id="modifier-{{ enfant.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="post" action="{{ path('admin_modifier_critere', {id: enfant.id}) }}">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Modifier "{{ enfant.nom }}"</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Nom</label>
+                                                <input type="text" name="nom" class="form-control" value="{{ enfant.nom }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Note maximale</label>
+                                                <input type="number" step="0.01" min="0" name="note_max" class="form-control" value="{{ enfant.noteMax }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Description</label>
+                                                <input type="text" name="description" class="form-control" value="{{ enfant.description }}">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                            <button type="submit" class="btn btn-success">Enregistrer</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    {# Modal de modification pour le parent #}
+                    <div class="modal fade" id="modifier-{{ critere.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="post" action="{{ path('admin_modifier_critere', {id: critere.id}) }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Modifier "{{ critere.nom }}"</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nom</label>
+                                            <input type="text" name="nom" class="form-control" value="{{ critere.nom }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Note maximale</label>
+                                            <input type="number" step="0.01" min="0" name="note_max" class="form-control" value="{{ critere.noteMax }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Description</label>
+                                            <input type="text" name="description" class="form-control" value="{{ critere.description }}">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                        <button type="submit" class="btn btn-success">Enregistrer</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<a href="{{ path('admin_index') }}" class="btn btn-outline-secondary btn-lg px-4 mb-4">
+    <i class="bi bi-x-circle me-1"></i> Retour au tableau de bord
+</a>
+
+</div>
+
+<footer>
+<p class="mb-0">&copy; Cour Suprême du Bénin — Tous droits réservés</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Candidatures - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; display: flex; flex-direction: column; min-height: 100vh; }
+        .navbar { background-color: #1a7a1a; }
+        .navbar-brand, .nav-link { color: white !important; }
+        .nav-link:hover { color: #FFD700 !important; }
+        footer { background-color: #1a7a1a; color: white; padding: 15px; text-align: center; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg px-4">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmzw3pT2HwvieFTj_nB4nWbEVwWQfkuSpfwMtV7dTLOi7Nm-Ga4-RDR6s&s=10" height="45" alt="Logo">
+        <span class="fw-bold">Cour Suprême du Bénin</span>
+    </a>
+    <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto gap-2">
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_index') }}"><i class="bi bi-speedometer2 me-1"></i>Tableau de bord</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_candidats') }}"><i class="bi bi-folder-fill me-1"></i>Candidatures</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_criteres') }}"><i class="bi bi-list-check me-1"></i>Critères</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a></li>
+        </ul>
+    </div>
+</nav>
+
+{# ===== TOASTS FLASH ===== #}
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999;">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+        <div class="toast show align-items-center text-white bg-{{ type }} border-0 rounded-3 shadow mb-2" role="alert">
+            <div class="d-flex">
+                <div class="toast-body fs-6">{{ message }}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+
+<div class="container py-4 flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h4 class="fw-bold mb-0" style="color:#1a7a1a;"><i class="bi bi-collection-fill me-2"></i>Dossiers de Candidature</h4>
+    <form method="get" action="{{ path('admin_candidats') }}" class="d-flex gap-2">
+        {% if statut is defined and statut %}
+            <input type="hidden" name="statut" value="{{ statut }}">
+        {% endif %}
+        <input type="text" name="recherche" value="{{ recherche|default('') }}" class="form-control" placeholder="Rechercher (nom, email, code...)" style="min-width:280px;">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-search"></i>
+        </button>
+        {% if recherche is defined and recherche %}
+            <a href="{{ path('admin_candidats') }}" class="btn btn-outline-secondary" title="Réinitialiser">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        {% endif %}
+    </form>
+</div>
+
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead style="background-color:#1a7a1a; color:white;">
+                    <tr>
+                        <th class="p-3">#</th>
+                        <th class="p-3">Code Suivi</th>
+                        <th class="p-3">Nom</th>
+                        <th class="p-3">Prénoms</th>
+                        <th class="p-3">Email</th>
+                        <th class="p-3">Téléphone</th>
+                        <th class="p-3">Niveau d'étude</th>
+                        <th class="p-3">Statut Demande</th>
+                        <th class="p-3">Pièces Jointes</th>
+                        <th class="p-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for candidature in candidatures %}
+                    <tr>
+                        <td class="p-3-middle">{{ (page - 1) * 10 + loop.index }}</td>
+                        <td class="p-3 fw-bold text-success">
+                            {% if candidature.codeSuivi %}
+                                <span class="badge bg-dark">{{ candidature.codeSuivi }}</span>
+                            {% else %}
+                                <span class="text-muted small"><i>Généré à la validation</i></span>
+                            {% endif %}
+                        </td>
+                        <td class="p-3 text-uppercase">{{ candidature.candidat.nom }}</td>
+                        <td class="p-3">{{ candidature.candidat.prenoms }}</td>
+                        <td class="p-3">{{ candidature.candidat.email }}</td>
+                        <td class="p-3">{{ candidature.candidat.telephone }}</td>
+                        <td class="p-3"><span class="badge bg-secondary">{{ candidature.candidat.niveauEtude }}</span></td>
+                        <td class="p-3">
+                            {# Exploitation de ton Enum StatutDemande pour le badge #}
+                            <span class="badge bg-{{ candidature.statutDemande.getBadgeColor }} p-2">
+                                {{ candidature.statutDemande.getLabel }}
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            {# Boucle dynamique sur la collection de documents de la candidature #}
+                            {% for doc in candidature.document %}
+                                <a href="/uploads/{{ doc.chemin }}" target="_blank" class="btn btn-outline-secondary btn-sm mb-1" title="{{ doc.nom }} ({{ doc.type }})">
+                                    {% if 'cv' in doc.type|lower or 'cv' in doc.nom|lower %}
+                                        <i class="bi bi-person-vcard"></i>
+                                    {% elseif 'diplome' in doc.type|lower %}
+                                        <i class="bi bi-award"></i>
+                                    {% else %}
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <span class="text-muted small">Aucun fichier</span>
+                            {% endfor %}
+                        </td>
+                        <td class="p-3">
+                            {# Boutons d'action liés à l'ID de la candidature #}
+                            <a href="{{ path('admin_valider', {'id': candidature.id}) }}" class="btn btn-success btn-sm me-1" title="Valider administrativement">
+                                <i class="bi bi-check-circle"></i>
+                            </a>
+                            <a href="{{ path('admin_rejeter', {'id': candidature.id}) }}" class="btn btn-danger btn-sm me-1" title="Rejeter la demande">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center p-4 text-muted">Aucune candidature enregistrée pour le moment.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ===== PAGINATION ===== #}
+    {% if totalPages > 1 %}
+    <div class="d-flex justify-content-center mt-4 gap-2">
+        {% if page > 1 %}
+            <a href="{{ path('admin_candidats', {'page': page - 1}) }}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-chevron-left"></i> Précédent
+            </a>
+        {% endif %}
+
+        {% for i in 1..totalPages %}
+            <a href="{{ path('admin_candidats', {'page': i}) }}"
+               class="btn btn-sm {{ i == page ? 'btn-success' : 'btn-outline-success' }}">
+                {{ i }}
+            </a>
+        {% endfor %}
+
+        {% if page < totalPages %}
+            <a href="{{ path('admin_candidats', {'page': page + 1}) }}" class="btn btn-outline-success btn-sm">
+                Suivant <i class="bi bi-chevron-right"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+
+<footer>
+    <p class="mb-0">&copy; Cour Suprême du Bénin — Tous droits réservés</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    setTimeout(() => {
+        document.querySelectorAll('.toast').forEach(t => {
+            t.style.transition = 'opacity 0.5s';
+            t.style.opacity = '0';
+            setTimeout(() => t.style.display = 'none', 500);
+        });
+    }, 4000);
+</script>
+</body>
+</html>
