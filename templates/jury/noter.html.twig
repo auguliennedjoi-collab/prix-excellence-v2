@@ -15,7 +15,7 @@
         .critere-row label { font-weight: 600; color: #333; }
         .critere-row .max-badge { font-size: 12px; color: #1a7a1a; font-weight: bold; }
         #recap-box { background: #f0f9f0; border: 2px dashed #1a7a1a; border-radius: 12px; }
-        #note-finale-affichee { font-size: 2rem; font-weight: bold; color: #1a7a1a; }
+        #note-ecrite-affichee { font-size: 2rem; font-weight: bold; color: #1a7a1a; }
     </style>
 </head>
 <body>
@@ -33,7 +33,6 @@
     </div>
 </nav>
 
-{# ===== TOASTS FLASH ===== #}
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999;">
     {% for type, messages in app.flashes %}
         {% for message in messages %}
@@ -54,11 +53,16 @@
     </a>
 
     <h4 class="fw-bold mb-1" style="color:#1a7a1a;">
-        <i class="bi bi-clipboard-check me-2"></i>Évaluation de la candidature
+        <i class="bi bi-clipboard-check me-2"></i>Évaluation écrite de la candidature
     </h4>
     <p class="text-muted mb-4">
         Dossier n°<strong>{{ numeroAnonyme ?? 'N/A' }}</strong> — Niveau d'étude : {{ candidature.candidat.niveauEtude ?? 'Non renseigné' }}
     </p>
+
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        Vous notez ici uniquement les critères écrits. La note orale sera à saisir séparément, une fois que tous les jurys auront terminé la notation écrite de tous les dossiers.
+    </div>
 
     <form method="post" id="form-evaluation">
         <div class="card shadow border-0 rounded-4 mb-4">
@@ -116,33 +120,13 @@
             </div>
         </div>
 
-        <div class="card shadow border-0 rounded-4 mb-4">
-            <div class="card-header fw-bold" style="background-color:#1a7a1a; color:white;">
-                <i class="bi bi-mic me-2"></i>Note orale (sur 20)
-            </div>
-            <div class="card-body">
-                <input type="number"
-                       name="note_orale"
-                       id="note_orale"
-                       class="form-control"
-                       min="0"
-                       max="20"
-                       step="0.01"
-                       value="{{ evaluation ? evaluation.noteOrale : '' }}"
-                       required>
-            </div>
-        </div>
-
         <div id="recap-box" class="p-4 mb-4 text-center">
-            <div class="text-muted small mb-1">Note finale estimée (calcul en temps réel)</div>
-            <div id="note-finale-affichee">--/20</div>
-            <div class="small text-muted mt-1">
-                (75% × note écrite + 25% × note orale)
-            </div>
+            <div class="text-muted small mb-1">Total des critères écrits (calcul en temps réel)</div>
+            <div id="note-ecrite-affichee">--/20</div>
         </div>
 
         <button type="submit" class="btn btn-success btn-lg w-100">
-            <i class="bi bi-check-circle me-2"></i>Valider mon évaluation
+            <i class="bi bi-check-circle me-2"></i>Valider les notes écrites
         </button>
     </form>
 </div>
@@ -161,7 +145,7 @@
         });
     }, 4000);
 
-    function calculerNoteFinale() {
+    function calculerTotalEcrit() {
         let totalEcrit = 0;
         let ecritValide = true;
 
@@ -175,26 +159,21 @@
             }
         });
 
-        const noteOraleInput = document.getElementById('note_orale');
-        const noteOrale = parseFloat(noteOraleInput.value.replace(',', '.'));
+        const affichage = document.getElementById('note-ecrite-affichee');
 
-        const affichage = document.getElementById('note-finale-affichee');
-
-        if (!ecritValide || isNaN(noteOrale) || noteOrale < 0 || noteOrale > 20) {
+        if (!ecritValide) {
             affichage.textContent = '--/20';
             return;
         }
 
-        const finale = (0.75 * totalEcrit) + (0.25 * noteOrale);
-
-        affichage.textContent = finale.toFixed(2) + '/20';
+        affichage.textContent = totalEcrit.toFixed(2) + '/20';
     }
 
-    document.querySelectorAll('.note-critere, #note_orale').forEach(input => {
-        input.addEventListener('input', calculerNoteFinale);
+    document.querySelectorAll('.note-critere').forEach(input => {
+        input.addEventListener('input', calculerTotalEcrit);
     });
 
-    calculerNoteFinale();
+    calculerTotalEcrit();
 </script>
 </body>
 </html>

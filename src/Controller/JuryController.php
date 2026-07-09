@@ -12,6 +12,7 @@ use App\Enum\StatutTraitement;
 use App\Repository\CandidatureRepository;
 use App\Repository\CritereRepository;
 use App\Repository\EvaluationRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,6 +26,7 @@ class JuryController extends AbstractController
 {
     public function __construct(
         private readonly CandidatureRepository $candidatureRepository,
+        private readonly UserRepository $userRepository,
     ) {}
 
     #[Route("", name: "index")]
@@ -41,12 +43,32 @@ class JuryController extends AbstractController
             ] = $evaluation;
         }
 
+        $totalJurys = $this->getNombreTotalJurys();
+        $phaseOraleOuverteParEdition = [];
+        foreach ($candidatures as $candidature) {
+            $edition = $candidature->getEdition();
+            if (!$edition) {
+                continue;
+            }
+            $editionId = $edition->getId();
+            if (!isset($phaseOraleOuverteParEdition[$editionId])) {
+                $phaseOraleOuverteParEdition[$editionId] = $this->isPhaseEcriteComplete(
+                    $edition,
+                    $totalJurys,
+                );
+            }
+        }
+
         return $this->render("jury/index.html.twig", [
             "candidatures" => $candidatures,
             "evaluationsParCandidature" => $evaluationsParCandidature,
+            "phaseOraleOuverteParEdition" => $phaseOraleOuverteParEdition,
         ]);
     }
 
+    /**
+     * PHASE 1 : notation des critères écrits uniquement.
+     */
     #[Route("/noter/{id}", name: "noter", methods: ["GET", "POST"])]
     public function noter(
         Candidature $candidature,
@@ -68,7 +90,6 @@ class JuryController extends AbstractController
 
         if ($request->isMethod("POST")) {
             $notesPostees = $request->request->all("notes");
-            $noteOraleBrute = $request->request->get("note_orale");
 
             if (!$evaluation) {
                 $evaluation = new Evaluation();
@@ -120,29 +141,8 @@ class JuryController extends AbstractController
             }
 
             if (!$erreur) {
-                if ($noteOraleBrute === null || $noteOraleBrute === "") {
-                    $erreur = true;
-                    $this->addFlash(
-                        "warning",
-                        "⚠️ Merci de renseigner la note orale.",
-                    );
-                } else {
-                    $noteOrale = (float) str_replace(",", ".", $noteOraleBrute);
-                    if ($noteOrale < 0 || $noteOrale > 20) {
-                        $erreur = true;
-                        $this->addFlash(
-                            "warning",
-                            "⚠️ La note orale doit être comprise entre 0 et 20.",
-                        );
-                    } else {
-                        $evaluation->setNoteOrale($noteOrale);
-                    }
-                }
-            }
-
-            if (!$erreur) {
                 $evaluation->setDateEvaluation(new \DateTime());
-                $evaluation->calculerNoteFinale();
+                $evaluation->calculerNoteEcrite();
 
                 if (
                     $candidature->getStatutTraitement() ===
@@ -155,20 +155,15 @@ class JuryController extends AbstractController
 
                 $em->flush();
 
-                $this->recalculerMoyenneCandidature($candidature, $em);
-                $em->flush();
-
                 $this->addFlash(
                     "success",
                     sprintf(
-                        "✅ Notes enregistrées pour le dossier n°%s. Merci d'indiquer maintenant le taux de plagiat perçu.",
+                        "✅ Notes écrites enregistrées pour le dossier n°%s.",
                         $numeroAnonyme,
                     ),
                 );
 
-                return $this->redirectToRoute("jury_plagiat", [
-                    "id" => $candidature->getId(),
-                ]);
+                return $this->redirectToRoute("jury_index");
             }
         }
 
@@ -180,8 +175,13 @@ class JuryController extends AbstractController
         ]);
     }
 
-    #[Route("/plagiat/{id}", name: "plagiat", methods: ["GET", "POST"])]
-    public function plagiat(
+    /**
+     * PHASE 2 : notation de l'oral, uniquement accessible une fois que
+     * TOUS les jurys ont terminé la notation écrite de TOUS les candidats
+     * validés de l'édition.
+     */
+    #[Route("/noter-oral/{id}", name: "noter_oral", methods: ["GET", "POST"])]
+    public function noterOral(
         Candidature $candidature,
         Request $request,
         EntityManagerInterface $em,
@@ -195,56 +195,70 @@ class JuryController extends AbstractController
             "candidature" => $candidature,
         ]);
 
-        if (!$evaluation) {
+        if (!$evaluation || $evaluation->getNoteEcrite() === null) {
             $this->addFlash(
                 "warning",
-                "⚠️ Merci de noter d'abord les critères écrits et la note orale.",
+                "⚠️ Merci de noter d'abord les critères écrits de ce dossier.",
             );
             return $this->redirectToRoute("jury_noter", [
                 "id" => $candidature->getId(),
             ]);
         }
 
-        if ($request->isMethod("POST")) {
-            $tauxPlagiatBrut = $request->request->get("taux_plagiat");
+        $edition = $candidature->getEdition();
+        $totalJurys = $this->getNombreTotalJurys();
 
-            if ($tauxPlagiatBrut === null || $tauxPlagiatBrut === "") {
+        if ($edition && !$this->isPhaseEcriteComplete($edition, $totalJurys)) {
+            $this->addFlash(
+                "warning",
+                "⚠️ La phase de notation orale n'est pas encore ouverte : certains jurys n'ont pas terminé les notes écrites de tous les dossiers.",
+            );
+            return $this->redirectToRoute("jury_index");
+        }
+
+        if ($request->isMethod("POST")) {
+            $noteOraleBrute = $request->request->get("note_orale");
+
+            if ($noteOraleBrute === null || $noteOraleBrute === "") {
                 $this->addFlash(
                     "warning",
-                    "⚠️ Merci de renseigner le taux de plagiat perçu.",
+                    "⚠️ Merci de renseigner la note orale.",
                 );
             } else {
-                $tauxPlagiat = (float) str_replace(",", ".", $tauxPlagiatBrut);
+                $noteOrale = (float) str_replace(",", ".", $noteOraleBrute);
 
-                if ($tauxPlagiat < 0 || $tauxPlagiat > 100) {
+                if ($noteOrale < 0 || $noteOrale > 20) {
                     $this->addFlash(
                         "warning",
-                        "⚠️ Le taux de plagiat doit être compris entre 0 et 100.",
+                        "⚠️ La note orale doit être comprise entre 0 et 20.",
                     );
                 } else {
-                    $evaluation->setTauxPlagiat($tauxPlagiat);
+                    $evaluation->setNoteOrale($noteOrale);
+                    $evaluation->calculerNoteFinale();
                     $em->flush();
 
-                    $edition = $candidature->getEdition();
-                    if ($edition) {
-                        $this->recalculerElimination($edition, $em);
-                        $this->recalculerPreselection($edition, $em);
-                    }
+                    $this->recalculerMoyenneCandidature($candidature, $em);
+                    $em->flush();
 
                     $this->addFlash(
                         "success",
                         sprintf(
-                            "✅ Taux de plagiat enregistré pour le dossier n°%s. Évaluation complète.",
+                            "✅ Note orale enregistrée pour le dossier n°%s (note finale : %s/20).",
                             $numeroAnonyme,
+                            $evaluation->getNoteFinale(),
                         ),
                     );
+
+                    if ($edition && $this->isPhaseOraleComplete($edition, $totalJurys)) {
+                        $this->recalculerPreselection($edition, $em);
+                    }
 
                     return $this->redirectToRoute("jury_index");
                 }
             }
         }
 
-        return $this->render("jury/plagiat.html.twig", [
+        return $this->render("jury/noter_oral.html.twig", [
             "candidature" => $candidature,
             "evaluation" => $evaluation,
             "numeroAnonyme" => $numeroAnonyme,
@@ -304,101 +318,97 @@ class JuryController extends AbstractController
         }
     }
 
-    private function recalculerElimination(
-        Edition $edition,
-        EntityManagerInterface $em,
-    ): void {
-        $candidatures = $edition->getCandidatures();
+    private function getNombreTotalJurys(): int
+    {
+        return count($this->userRepository->findByRole("ROLE_JURY"));
+    }
 
-        $moyennesParCandidature = [];
+    private function isPhaseEcriteComplete(Edition $edition, int $totalJurys): bool
+    {
+        if ($totalJurys === 0) {
+            return false;
+        }
 
-        foreach ($candidatures as $candidature) {
-            $evaluations = $candidature->getEvaluations();
-            $somme = 0.0;
+        $candidaturesValidees = $this->getCandidaturesValidees($edition);
+        if (empty($candidaturesValidees)) {
+            return false;
+        }
+
+        foreach ($candidaturesValidees as $candidature) {
             $count = 0;
-
-            foreach ($evaluations as $evaluation) {
-                if ($evaluation->getTauxPlagiat() !== null) {
-                    $somme += $evaluation->getTauxPlagiat();
+            foreach ($candidature->getEvaluations() as $evaluation) {
+                if ($evaluation->getNoteEcrite() !== null) {
                     $count++;
                 }
             }
-
-            if ($count > 0) {
-                $moyennesParCandidature[(string) $candidature->getId()] = round($somme / $count, 2);
+            if ($count < $totalJurys) {
+                return false;
             }
         }
 
-        if (empty($moyennesParCandidature)) {
-            return;
-        }
-
-        $tauxMax = max($moyennesParCandidature);
-
-        foreach ($candidatures as $candidature) {
-            $id = (string) $candidature->getId();
-
-            if (!isset($moyennesParCandidature[$id])) {
-                continue;
-            }
-
-            if ($moyennesParCandidature[$id] === $tauxMax && $tauxMax > 0) {
-                $candidature->setStatutTraitement(StatutTraitement::ELIMINE_PLAGIAT);
-            } elseif (
-                $candidature->getStatutTraitement() === StatutTraitement::ELIMINE_PLAGIAT
-            ) {
-                $candidature->setStatutTraitement(StatutTraitement::EN_COURS_ETUDE);
-            }
-        }
-
-        $em->flush();
+        return true;
     }
 
-    /**
-     * Présélectionne automatiquement les 7 meilleures moyennes d'une édition
-     * (hors candidats déjà éliminés pour plagiat), une fois que toutes les
-     * candidatures validées de l'édition ont été notées.
-     */
-    private function recalculerPreselection(
-        Edition $edition,
-        EntityManagerInterface $em,
-    ): void {
-        $candidatures = $edition->getCandidatures();
+    private function isPhaseOraleComplete(Edition $edition, int $totalJurys): bool
+    {
+        if ($totalJurys === 0) {
+            return false;
+        }
 
+        $candidaturesValidees = $this->getCandidaturesValidees($edition);
+        if (empty($candidaturesValidees)) {
+            return false;
+        }
+
+        foreach ($candidaturesValidees as $candidature) {
+            $count = 0;
+            foreach ($candidature->getEvaluations() as $evaluation) {
+                if ($evaluation->getNoteFinale() !== null) {
+                    $count++;
+                }
+            }
+            if ($count < $totalJurys) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function getCandidaturesValidees(Edition $edition): array
+    {
+        $candidatures = $edition->getCandidatures();
         $candidaturesValidees = [];
         foreach ($candidatures as $candidature) {
             if ($candidature->getStatutDemande() === StatutDemande::VALIDE) {
                 $candidaturesValidees[] = $candidature;
             }
         }
+        return $candidaturesValidees;
+    }
+
+    private function recalculerPreselection(
+        Edition $edition,
+        EntityManagerInterface $em,
+    ): void {
+        $candidaturesValidees = $this->getCandidaturesValidees($edition);
 
         if (empty($candidaturesValidees)) {
             return;
         }
 
-        // On attend que toutes les candidatures validées aient une note
-        // (donc que l'ensemble du jury ait terminé son travail)
-        foreach ($candidaturesValidees as $candidature) {
-            if ($candidature->getNote() === null) {
-                return; // Pas encore prêt : au moins une candidature n'a pas de note
-            }
-        }
-
-        // On exclut les candidats déjà éliminés pour plagiat du classement
-        $classables = array_filter(
+        usort(
             $candidaturesValidees,
-            fn(Candidature $c) => $c->getStatutTraitement() !== StatutTraitement::ELIMINE_PLAGIAT,
+            fn(Candidature $a, Candidature $b) => $b->getNote() <=> $a->getNote(),
         );
 
-        usort($classables, fn(Candidature $a, Candidature $b) => $b->getNote() <=> $a->getNote());
-
         $top7Ids = [];
-        foreach (array_slice($classables, 0, 7) as $candidature) {
+        foreach (array_slice($candidaturesValidees, 0, 7) as $candidature) {
             $top7Ids[] = (string) $candidature->getId();
             $candidature->setStatutTraitement(StatutTraitement::PRESELECTIONNE);
         }
 
-        foreach ($classables as $candidature) {
+        foreach ($candidaturesValidees as $candidature) {
             $id = (string) $candidature->getId();
             if (!in_array($id, $top7Ids, true)) {
                 $candidature->setStatutTraitement(StatutTraitement::NON_RETENU);

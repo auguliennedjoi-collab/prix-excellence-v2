@@ -12,7 +12,6 @@
         .btn-vert { background-color: var(--vert); color: white; border-radius: 30px; font-weight: 500; }
         .btn-vert:hover { background-color: #156315; color: white; }
 
-        /* Styles de la frise chronologique (Timeline) */
         .track-timeline {
             position: relative;
             display: flex;
@@ -155,44 +154,98 @@
                             </div>
 
                             <div class="p-4">
-                                <div class="text-center mb-5">
-                                    <span class="text-muted d-block small mb-1">Statut actuel du dossier</span>
-                                    <span class="badge fs-6 px-4 py-2 rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25">
-                                        <i class="bi bi-info-circle-fill me-2"></i>
-                                        {{ candidature.statutTraitement ? candidature.statutTraitement.label : 'Reçu' }}
-                                    </span>
-                                </div>
 
-                                {# Calcul de progression de la frise #}
-                                {% set progress = 20 %}
-                                {% if candidature.statutTraitement and candidature.statutTraitement.value == 'en_verification' %}{% set progress = 50 %}
-                                {% elseif candidature.statutTraitement and candidature.statutTraitement.value == 'verifie' %}{% set progress = 80 %}
-                                {% elseif candidature.statutTraitement and candidature.statutTraitement.value == 'traite' %}{% set progress = 100 %}
+                                {% if candidature.statutDemande.value == 'rejete' %}
+
+                                    {# --- Dossier rejeté : on arrête tout, pas de frise --- #}
+                                    <div class="text-center py-4">
+                                        <div class="mb-3 text-danger">
+                                            <i class="bi bi-x-circle-fill" style="font-size: 3rem;"></i>
+                                        </div>
+                                        <span class="badge fs-6 px-4 py-2 rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 mb-3">
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                            {{ candidature.statutDemande.label }}
+                                        </span>
+                                        <p class="text-muted mb-0">
+                                            Votre dossier n'a pas été retenu au stade de la vérification administrative.
+                                            Pour toute question, veuillez contacter le secrétariat de la Cour suprême.
+                                        </p>
+                                    </div>
+
+                                {% elseif candidature.statutDemande.value == 'incomplet' %}
+
+                                    {# --- Dossier incomplet : on invite à le compléter --- #}
+                                    <div class="text-center py-4">
+                                        <div class="mb-3 text-warning">
+                                            <i class="bi bi-exclamation-circle-fill" style="font-size: 3rem;"></i>
+                                        </div>
+                                        <span class="badge fs-6 px-4 py-2 rounded-pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 mb-3">
+                                            <i class="bi bi-info-circle-fill me-2"></i>
+                                            {{ candidature.statutDemande.label }}
+                                        </span>
+                                        <p class="text-muted mb-0">
+                                            Certaines pièces de votre dossier sont manquantes ou non conformes.
+                                            Veuillez contacter le secrétariat de la Cour suprême pour régulariser votre situation.
+                                        </p>
+                                    </div>
+
+                                {% else %}
+
+                                    {# --- Dossier soumis ou validé : on affiche la frise --- #}
+                                    <div class="text-center mb-5">
+                                        <span class="text-muted d-block small mb-1">Statut actuel du dossier</span>
+                                        <span class="badge fs-6 px-4 py-2 rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                            <i class="bi bi-info-circle-fill me-2"></i>
+                                            {% if candidature.statutDemande.value == 'soumis' %}
+                                                En attente de vérification administrative
+                                            {% else %}
+                                                {{ candidature.statutTraitement ? candidature.statutTraitement.label : 'Reçu' }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+
+                                    {# Calcul de progression de la frise selon le statut réel #}
+                                    {% set progress = 25 %}
+
+                                    {% if candidature.statutDemande.value == 'valide' %}
+                                        {% if candidature.statutTraitement %}
+                                            {% set statut = candidature.statutTraitement.value %}
+                                            {% if statut == 'en_cours_etude' %}
+                                                {% set progress = 50 %}
+                                            {% elseif statut in ['preselectionne', 'non_retenu', 'elimine_plagiat'] %}
+                                                {% set progress = 75 %}
+                                            {% elseif statut == 'laureat' %}
+                                                {% set progress = 100 %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+
+                                    <div class="track-timeline mb-4 px-3">
+                                        <div class="timeline-progress" style="width: {{ progress }}%;"></div>
+
+                                        <div class="step-item active">
+                                            <div class="step-icon"><i class="bi bi-file-earmark-check"></i></div>
+                                            <div class="step-label">Dépôt enregistré</div>
+                                        </div>
+
+                                        <div class="step-item {% if progress >= 50 %}active{% endif %}">
+                                            <div class="step-icon"><i class="bi bi-search"></i></div>
+                                            <div class="step-label">Vérification</div>
+                                        </div>
+
+                                        <div class="step-item {% if progress >= 75 %}active{% endif %}">
+                                            <div class="step-icon"><i class="bi bi-journal-check"></i></div>
+                                            <div class="step-label">Jury d'Évaluation</div>
+                                        </div>
+
+                                        <div class="step-item {% if progress == 100 %}active{% endif %}">
+                                            <div class="step-icon"><i class="bi bi-trophy"></i></div>
+                                            <div class="step-label">Délibération</div>
+                                        </div>
+                                    </div>
+
                                 {% endif %}
 
-                                <div class="track-timeline mb-4 px-3">
-                                    <div class="timeline-progress" style="width: {{ progress }}%;"></div>
-
-                                    <div class="step-item active">
-                                        <div class="step-icon"><i class="bi bi-file-earmark-check"></i></div>
-                                        <div class="step-label">Dépôt enregistré</div>
-                                    </div>
-
-                                    <div class="step-item {% if progress >= 50 %}active{% endif %}">
-                                        <div class="step-icon"><i class="bi bi-search"></i></div>
-                                        <div class="step-label">Vérification</div>
-                                    </div>
-
-                                    <div class="step-item {% if progress >= 80 %}active{% endif %}">
-                                        <div class="step-icon"><i class="bi bi-journal-check"></i></div>
-                                        <div class="step-label">Jury d'Évaluation</div>
-                                    </div>
-
-                                    <div class="step-item {% if progress == 100 %}active{% endif %}">
-                                        <div class="step-icon"><i class="bi bi-trophy"></i></div>
-                                        <div class="step-label">Délibération</div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 

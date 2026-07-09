@@ -55,4 +55,21 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
         $this->add($user, true);
     }
+
+    /**
+     * Retourne tous les utilisateurs possédant un rôle donné.
+     * Le champ "roles" est stocké en JSON (ex: ["ROLE_JURY"]), donc on ne
+     * peut pas utiliser un simple findBy(["role" => ...]) : on fait une
+     * recherche texte sur la colonne JSON sérialisée.
+     *
+     * @return User[]
+     */
+    public function findByRole(string $role): array
+    {
+        return $this->createQueryBuilder("u")
+            ->andWhere("u.roles LIKE :role")
+            ->setParameter("role", '%"' . $role . '"%')
+            ->getQuery()
+            ->getResult();
+    }
 }

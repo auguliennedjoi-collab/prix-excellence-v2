@@ -174,7 +174,11 @@ class Evaluation
         return null;
     }
 
-    public function calculerNoteFinale(): float
+    /**
+     * Calcule et enregistre uniquement la note écrite (somme des critères).
+     * Appelé à la fin de la phase écrite, AVANT que la note orale existe.
+     */
+    public function calculerNoteEcrite(): float
     {
         $totalEcrit = 0.0;
         foreach ($this->noteCriteres as $noteCritere) {
@@ -182,9 +186,20 @@ class Evaluation
         }
         $this->noteEcrite = round($totalEcrit, 2);
 
+        return $this->noteEcrite;
+    }
+
+    /**
+     * Calcule la note finale (75% écrit + 25% oral).
+     * Doit être appelée uniquement pendant la phase orale, une fois que
+     * noteEcrite ET noteOrale sont tous les deux renseignés.
+     */
+    public function calculerNoteFinale(): float
+    {
+        $noteEcrite = $this->noteEcrite ?? $this->calculerNoteEcrite();
         $noteOrale = $this->noteOrale ?? 0.0;
 
-        $final = 0.75 * $this->noteEcrite + 0.25 * $noteOrale;
+        $final = 0.75 * $noteEcrite + 0.25 * $noteOrale;
         $this->noteFinale = round($final, 2);
 
         return $this->noteFinale;

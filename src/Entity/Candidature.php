@@ -35,6 +35,13 @@ class Candidature
     #[ORM\Column(nullable: true)]
     private ?float $note = null;
 
+    /**
+     * Taux de plagiat évalué par l'ADMIN (et non plus par le jury),
+     * uniquement pour les candidatures présélectionnées (top 7).
+     */
+    #[ORM\Column(nullable: true)]
+    private ?float $tauxPlagiat = null;
+
     #[ORM\ManyToOne(inversedBy: "candidature")]
     #[ORM\JoinColumn(nullable: false)]
     private ?Candidat $candidat = null;
@@ -141,7 +148,6 @@ class Candidature
     public function removeDocument(Document $document): static
     {
         if ($this->document->removeElement($document)) {
-            // set the owning side to null (unless already changed)
             if ($document->getCandidature() === $this) {
                 $document->setCandidature(null);
             }
@@ -182,6 +188,18 @@ class Candidature
     public function setNote(?float $note): static
     {
         $this->note = $note;
+
+        return $this;
+    }
+
+    public function getTauxPlagiat(): ?float
+    {
+        return $this->tauxPlagiat;
+    }
+
+    public function setTauxPlagiat(?float $tauxPlagiat): static
+    {
+        $this->tauxPlagiat = $tauxPlagiat;
 
         return $this;
     }
