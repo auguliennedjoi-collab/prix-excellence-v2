@@ -1,4 +1,7 @@
 security:
+    role_hierarchy:
+        ROLE_PRESIDENT_JURY: ROLE_JURY
+
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: "auto"
 

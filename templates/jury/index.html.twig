@@ -93,25 +93,43 @@
                                     </div>
                                 </td>
                                 <td class="p-3 align-middle">
-                                    {% if monEvaluation and monEvaluation.noteFinale is not null %}
-                                        {# Écrit + oral terminés #}
+                                    {% if monEvaluation and monEvaluation.noteOrale is not null %}
+                                        {# Mon écrit + mon oral sont faits #}
                                         <div class="note-deja mb-1">
-                                            <i class="bi bi-check-circle-fill text-success"></i> Évaluation complète : {{ monEvaluation.noteFinale }}/20
+                                            <i class="bi bi-check-circle-fill text-success"></i> Mon écrit : {{ monEvaluation.noteEcrite }}/20 — Mon oral : {{ monEvaluation.noteOrale }}/20
                                         </div>
+                                        {% if candidature.noteEcriteGenerale is not null %}
+                                            <div class="note-deja mb-1 text-primary">
+                                                <i class="bi bi-bar-chart-fill"></i> Écrit général : {{ candidature.noteEcriteGenerale }}/20
+                                                {% if candidature.noteOrale is not null %}
+                                                    — Oral général : {{ candidature.noteOrale }}/20
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                        {% if candidature.note is not null %}
+                                            <div class="note-deja mb-1 text-primary">
+                                                <i class="bi bi-trophy-fill"></i> Note finale du candidat : {{ candidature.note }}/20
+                                            </div>
+                                        {% endif %}
                                         <div class="d-flex gap-1">
                                             <a href="{{ path('jury_noter', {'id': candidature.id}) }}" class="btn btn-outline-success btn-sm">
                                                 <i class="bi bi-pencil-square me-1"></i>Modifier l'écrit
                                             </a>
                                             <a href="{{ path('jury_noter_oral', {'id': candidature.id}) }}" class="btn btn-outline-success btn-sm">
-                                                <i class="bi bi-mic me-1"></i>Modifier l'oral
+                                                <i class="bi bi-mic me-1"></i>Modifier mon oral
                                             </a>
                                         </div>
 
                                     {% elseif monEvaluation and monEvaluation.noteEcrite is not null %}
-                                        {# Écrit fait, oral pas encore #}
+                                        {# Mon écrit fait, mon oral pas encore #}
                                         <div class="note-deja mb-1">
-                                            <i class="bi bi-check-circle-fill text-success"></i> Écrit noté : {{ monEvaluation.noteEcrite }}/20
+                                            <i class="bi bi-check-circle-fill text-success"></i> Mon écrit : {{ monEvaluation.noteEcrite }}/20
                                         </div>
+                                        {% if phaseOraleOuverte and candidature.noteEcriteGenerale is not null %}
+                                            <div class="note-deja mb-1 text-primary">
+                                                <i class="bi bi-bar-chart-fill"></i> Note écrite générale (moyenne des jurys) : {{ candidature.noteEcriteGenerale }}/20
+                                            </div>
+                                        {% endif %}
                                         <div class="d-flex gap-1">
                                             <a href="{{ path('jury_noter', {'id': candidature.id}) }}" class="btn btn-outline-success btn-sm">
                                                 <i class="bi bi-pencil-square me-1"></i>Modifier l'écrit
@@ -128,7 +146,7 @@
                                         </div>
 
                                     {% else %}
-                                        {# Rien noté du tout #}
+                                        {# Rien noté par moi #}
                                         <a href="{{ path('jury_noter', {'id': candidature.id}) }}" class="btn btn-success btn-sm">
                                             <i class="bi bi-pencil-square me-1"></i>Évaluer (écrit)
                                         </a>

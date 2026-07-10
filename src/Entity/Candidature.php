@@ -32,12 +32,29 @@ class Candidature
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $codeSuivi = null;
 
+    /**
+     * Note finale du candidat (75% écrit général + 25% oral unique).
+     */
     #[ORM\Column(nullable: true)]
     private ?float $note = null;
 
     /**
-     * Taux de plagiat évalué par l'ADMIN (et non plus par le jury),
-     * uniquement pour les candidatures présélectionnées (top 7).
+     * Moyenne des notes écrites de TOUS les jurys pour ce candidat.
+     * Recalculée automatiquement à chaque notation écrite.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?float $noteEcriteGenerale = null;
+
+    /**
+     * Note orale UNIQUE du candidat, saisie une seule fois par le premier
+     * jury qui y accède (pas une note par jury).
+     */
+    #[ORM\Column(nullable: true)]
+    private ?float $noteOrale = null;
+
+    /**
+     * Taux de plagiat évalué par l'ADMIN, uniquement pour les
+     * candidatures présélectionnées (top 7).
      */
     #[ORM\Column(nullable: true)]
     private ?float $tauxPlagiat = null;
@@ -188,6 +205,30 @@ class Candidature
     public function setNote(?float $note): static
     {
         $this->note = $note;
+
+        return $this;
+    }
+
+    public function getNoteEcriteGenerale(): ?float
+    {
+        return $this->noteEcriteGenerale;
+    }
+
+    public function setNoteEcriteGenerale(?float $noteEcriteGenerale): static
+    {
+        $this->noteEcriteGenerale = $noteEcriteGenerale;
+
+        return $this;
+    }
+
+    public function getNoteOrale(): ?float
+    {
+        return $this->noteOrale;
+    }
+
+    public function setNoteOrale(?float $noteOrale): static
+    {
+        $this->noteOrale = $noteOrale;
 
         return $this;
     }

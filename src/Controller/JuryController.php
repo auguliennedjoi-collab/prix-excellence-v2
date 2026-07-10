@@ -67,7 +67,7 @@ class JuryController extends AbstractController
     }
 
     /**
-     * PHASE 1 : notation des critères écrits uniquement.
+     * PHASE 1 : notation des critères écrits, PAR jury.
      */
     #[Route("/noter/{id}", name: "noter", methods: ["GET", "POST"])]
     public function noter(
@@ -155,6 +155,9 @@ class JuryController extends AbstractController
 
                 $em->flush();
 
+                $this->recalculerNoteEcriteGenerale($candidature, $em);
+                $em->flush();
+
                 $this->addFlash(
                     "success",
                     sprintf(
@@ -176,9 +179,9 @@ class JuryController extends AbstractController
     }
 
     /**
-     * PHASE 2 : notation de l'oral, uniquement accessible une fois que
-     * TOUS les jurys ont terminé la notation écrite de TOUS les candidats
-     * validés de l'édition.
+     * PHASE 2 : notation orale, PAR jury (comme l'écrit). Accessible une
+     * fois que TOUS les jurys ont terminé l'écrit pour TOUS les
+     * candidats validés.
      */
     #[Route("/noter-oral/{id}", name: "noter_oral", methods: ["GET", "POST"])]
     public function noterOral(
@@ -234,18 +237,16 @@ class JuryController extends AbstractController
                     );
                 } else {
                     $evaluation->setNoteOrale($noteOrale);
-                    $evaluation->calculerNoteFinale();
                     $em->flush();
 
-                    $this->recalculerMoyenneCandidature($candidature, $em);
+                    $this->recalculerNoteOraleGenerale($candidature, $em);
                     $em->flush();
 
                     $this->addFlash(
                         "success",
                         sprintf(
-                            "✅ Note orale enregistrée pour le dossier n°%s (note finale : %s/20).",
+                            "✅ Note orale enregistrée pour le dossier n°%s.",
                             $numeroAnonyme,
-                            $evaluation->getNoteFinale(),
                         ),
                     );
 
@@ -293,28 +294,57 @@ class JuryController extends AbstractController
         return $feuilles;
     }
 
-    private function recalculerMoyenneCandidature(
+    /**
+     * Moyenne des notes écrites de TOUS les jurys pour un candidat.
+     */
+    private function recalculerNoteEcriteGenerale(
         Candidature $candidature,
         EntityManagerInterface $em,
     ): void {
-        $evaluations = $candidature->getEvaluations();
-
-        if (count($evaluations) === 0) {
-            $candidature->setNote(null);
-            return;
-        }
-
         $somme = 0.0;
         $count = 0;
-        foreach ($evaluations as $evaluation) {
-            if ($evaluation->getNoteFinale() !== null) {
-                $somme += $evaluation->getNoteFinale();
+        foreach ($candidature->getEvaluations() as $evaluation) {
+            if ($evaluation->getNoteEcrite() !== null) {
+                $somme += $evaluation->getNoteEcrite();
                 $count++;
             }
         }
 
         if ($count > 0) {
-            $candidature->setNote(round($somme / $count, 2));
+            $candidature->setNoteEcriteGenerale(round($somme / $count, 2));
+        }
+    }
+
+    /**
+     * Moyenne des notes orales de TOUS les jurys pour un candidat
+     * (stockée dans Candidature::noteOrale). Recalcule ensuite la note
+     * finale (75% écrit général + 25% oral général) si possible.
+     */
+    private function recalculerNoteOraleGenerale(
+        Candidature $candidature,
+        EntityManagerInterface $em,
+    ): void {
+        $somme = 0.0;
+        $count = 0;
+        foreach ($candidature->getEvaluations() as $evaluation) {
+            if ($evaluation->getNoteOrale() !== null) {
+                $somme += $evaluation->getNoteOrale();
+                $count++;
+            }
+        }
+
+        if ($count > 0) {
+            $noteOraleGenerale = round($somme / $count, 2);
+            $candidature->setNoteOrale($noteOraleGenerale);
+
+            if ($candidature->getNoteEcriteGenerale() !== null) {
+                $noteFinale = round(
+                    0.75 * $candidature->getNoteEcriteGenerale() +
+                        0.25 * $noteOraleGenerale,
+                    2,
+                );
+                $candidature->setNote($noteFinale);
+            }
         }
     }
 
@@ -363,7 +393,7 @@ class JuryController extends AbstractController
         foreach ($candidaturesValidees as $candidature) {
             $count = 0;
             foreach ($candidature->getEvaluations() as $evaluation) {
-                if ($evaluation->getNoteFinale() !== null) {
+                if ($evaluation->getNoteOrale() !== null) {
                     $count++;
                 }
             }

@@ -27,7 +27,7 @@
             <li class="nav-item"><a class="nav-link" href="{{ path('admin_index') }}"><i class="bi bi-speedometer2 me-1"></i>Tableau de bord</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ path('admin_candidats') }}"><i class="bi bi-folder-fill me-1"></i>Candidatures</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ path('admin_utilisateurs') }}"><i class="bi bi-shield-lock-fill me-1"></i>Utilisateurs</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ path('admin_parametres') }}"><i class="bi bi-gear me-1"></i>Paramètres</a></li>z
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_parametres') }}"><i class="bi bi-gear me-1"></i>Paramètres</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a></li>
         </ul>
     </div>
@@ -81,6 +81,7 @@
                             <label class="form-label fw-bold">Niveau de privilèges / Rôle</label>
                             <select name="role" class="form-select" required>
                                 <option value="ROLE_JURY" {% if 'ROLE_JURY' in user.roles %}selected{% endif %}>Membre du Jury (Évaluation & Lecture)</option>
+                                <option value="ROLE_PRESIDENT_JURY" {% if 'ROLE_PRESIDENT_JURY' in user.roles %}selected{% endif %}>Président du Jury (Note orale)</option>
                                 <option value="ROLE_ADMIN" {% if 'ROLE_ADMIN' in user.roles %}selected{% endif %}>Administrateur Système (Contrôle total)</option>
                             </select>
                         </div>
