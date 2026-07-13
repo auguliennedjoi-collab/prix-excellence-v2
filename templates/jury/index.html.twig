@@ -12,7 +12,10 @@
         .navbar-brand, .nav-link { color: white !important; }
         .nav-link:hover { color: #FFD700 !important; }
         footer { background-color: #1a7a1a; color: white; padding: 15px; text-align: center; margin-top: auto; }
-        .note-deja { font-size: 12px; color: #1a7a1a; font-weight: bold; }
+        .note-pill { font-size: 12px; font-weight: 600; }
+        .toggle-termines { cursor: pointer; user-select: none; }
+        .toggle-termines .bi-chevron-down { transition: transform 0.2s ease; }
+        .toggle-termines.open .bi-chevron-down { transform: rotate(180deg); }
     </style>
 </head>
 <body>
@@ -51,25 +54,40 @@
     </h4>
     <p class="text-muted mb-4">Seules les candidatures validées administrativement sont visibles. Les identités des candidats restent masquées.</p>
 
-    <div class="card shadow border-0 rounded-4">
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead style="background-color:#1a7a1a; color:white;">
-                    <tr>
-                        <th class="p-3">#</th>
-                        <th class="p-3">Niveau d'étude</th>
-                        <th class="p-3">Documents joints</th>
-                        <th class="p-3">Évaluation</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set found = false %}
-                    {% set counter = 0 %}
+    {% set aEvaluer = [] %}
+    {% set termines = [] %}
 
-                    {% for candidature in candidatures %}
-                        {% if candidature.statutDemande.value == 'valide' %}
-                            {% set found = true %}
-                            {% set counter = counter + 1 %}
+    {% for candidature in candidatures %}
+        {% if candidature.statutDemande.value == 'valide' %}
+            {% set monEvaluation = evaluationsParCandidature[candidature.id] ?? null %}
+            {% if monEvaluation and monEvaluation.noteOrale is not null %}
+                {% set termines = termines|merge([candidature]) %}
+            {% else %}
+                {% set aEvaluer = aEvaluer|merge([candidature]) %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    {# ===================== À ÉVALUER ===================== #}
+    <div class="card shadow border-0 rounded-4 mb-4">
+        <div class="card-header fw-bold" style="background-color:#1a7a1a; color:white;">
+            <i class="bi bi-pencil-square me-2"></i>À évaluer ({{ aEvaluer|length }})
+        </div>
+        <div class="card-body p-0">
+            {% if aEvaluer is empty %}
+                <p class="text-muted p-4 mb-0">Aucun dossier en attente de votre part. 🎉</p>
+            {% else %}
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="p-3">#</th>
+                            <th class="p-3">Niveau d'étude</th>
+                            <th class="p-3">Documents</th>
+                            <th class="p-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for candidature in aEvaluer %}
                             {% set monEvaluation = evaluationsParCandidature[candidature.id] ?? null %}
                             {% set docsMasques = ['identityFile', 'diplomaFile', 'cvFile'] %}
                             {% set docsVisibles = candidature.document|filter(doc => doc.type not in docsMasques) %}
@@ -77,14 +95,12 @@
                             {% set phaseOraleOuverte = editionId and phaseOraleOuverteParEdition[editionId] is defined ? phaseOraleOuverteParEdition[editionId] : false %}
 
                             <tr>
-                                <td class="p-3 align-middle">{{ counter }}</td>
+                                <td class="p-3 align-middle">{{ loop.index }}</td>
+                                <td class="p-3 align-middle">{{ candidature.candidat.niveauEtude ?? 'Non renseigné' }}</td>
                                 <td class="p-3 align-middle">
-                                    {{ candidature.candidat.niveauEtude ?? 'Non renseigné' }}
-                                </td>
-                                <td class="p-3 align-middle">
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex flex-wrap gap-2">
                                         {% for doc in docsVisibles %}
-                                            <a href="{{ asset(doc.chemin) }}" target="_blank" class="btn btn-outline-success btn-sm" title="{{ doc.type ?? 'Pièce' }}">
+                                            <a href="{{ asset(doc.chemin) }}" target="_blank" class="btn btn-outline-success btn-sm">
                                                 <i class="bi bi-file-earmark-pdf me-1"></i>{{ doc.type ?? 'Pièce' }}
                                             </a>
                                         {% else %}
@@ -93,80 +109,98 @@
                                     </div>
                                 </td>
                                 <td class="p-3 align-middle">
-                                    {% if monEvaluation and monEvaluation.noteOrale is not null %}
-                                        {# Mon écrit + mon oral sont faits #}
-                                        <div class="note-deja mb-1">
-                                            <i class="bi bi-check-circle-fill text-success"></i> Mon écrit : {{ monEvaluation.noteEcrite }}/20 — Mon oral : {{ monEvaluation.noteOrale }}/20
-                                        </div>
-                                        {% if candidature.noteEcriteGenerale is not null %}
-                                            <div class="note-deja mb-1 text-primary">
-                                                <i class="bi bi-bar-chart-fill"></i> Écrit général : {{ candidature.noteEcriteGenerale }}/20
-                                                {% if candidature.noteOrale is not null %}
-                                                    — Oral général : {{ candidature.noteOrale }}/20
-                                                {% endif %}
-                                            </div>
-                                        {% endif %}
-                                        {% if candidature.note is not null %}
-                                            <div class="note-deja mb-1 text-primary">
-                                                <i class="bi bi-trophy-fill"></i> Note finale du candidat : {{ candidature.note }}/20
-                                            </div>
-                                        {% endif %}
-                                        <div class="d-flex gap-1">
-                                            <a href="{{ path('jury_noter', {'id': candidature.id}) }}" class="btn btn-outline-success btn-sm">
-                                                <i class="bi bi-pencil-square me-1"></i>Modifier l'écrit
+                                    {% if monEvaluation and monEvaluation.noteEcrite is not null %}
+                                        <span class="badge bg-success-subtle text-success note-pill me-2">Écrit : {{ monEvaluation.noteEcrite }}/20</span>
+                                        {% if phaseOraleOuverte %}
+                                            <a href="{{ path('jury_noter_oral', {'id': candidature.id}) }}" class="btn btn-success btn-sm">
+                                                <i class="bi bi-mic me-1"></i>Noter l'oral
                                             </a>
-                                            <a href="{{ path('jury_noter_oral', {'id': candidature.id}) }}" class="btn btn-outline-success btn-sm">
-                                                <i class="bi bi-mic me-1"></i>Modifier mon oral
-                                            </a>
-                                        </div>
-
-                                    {% elseif monEvaluation and monEvaluation.noteEcrite is not null %}
-                                        {# Mon écrit fait, mon oral pas encore #}
-                                        <div class="note-deja mb-1">
-                                            <i class="bi bi-check-circle-fill text-success"></i> Mon écrit : {{ monEvaluation.noteEcrite }}/20
-                                        </div>
-                                        {% if phaseOraleOuverte and candidature.noteEcriteGenerale is not null %}
-                                            <div class="note-deja mb-1 text-primary">
-                                                <i class="bi bi-bar-chart-fill"></i> Note écrite générale (moyenne des jurys) : {{ candidature.noteEcriteGenerale }}/20
-                                            </div>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Oral pas encore ouvert</span>
                                         {% endif %}
-                                        <div class="d-flex gap-1">
-                                            <a href="{{ path('jury_noter', {'id': candidature.id}) }}" class="btn btn-outline-success btn-sm">
-                                                <i class="bi bi-pencil-square me-1"></i>Modifier l'écrit
-                                            </a>
-                                            {% if phaseOraleOuverte %}
-                                                <a href="{{ path('jury_noter_oral', {'id': candidature.id}) }}" class="btn btn-success btn-sm">
-                                                    <i class="bi bi-mic me-1"></i>Noter l'oral
-                                                </a>
-                                            {% else %}
-                                                <span class="badge bg-secondary align-self-center">
-                                                    <i class="bi bi-hourglass-split me-1"></i>Oral pas encore ouvert
-                                                </span>
-                                            {% endif %}
-                                        </div>
-
                                     {% else %}
-                                        {# Rien noté par moi #}
                                         <a href="{{ path('jury_noter', {'id': candidature.id}) }}" class="btn btn-success btn-sm">
                                             <i class="bi bi-pencil-square me-1"></i>Évaluer (écrit)
                                         </a>
                                     {% endif %}
                                 </td>
                             </tr>
-                        {% endif %}
-                    {% else %}
-                        {% set found = false %}
-                    {% endfor %}
-
-                    {% if not found %}
-                    <tr>
-                        <td colspan="4" class="text-center p-4 text-muted">Aucune candidature validée disponible pour évaluation.</td>
-                    </tr>
-                    {% endif %}
-                </tbody>
-            </table>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
         </div>
     </div>
+
+    {# ===================== DÉJÀ ÉVALUÉS (repliable) ===================== #}
+    {% if termines is not empty %}
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-header fw-bold bg-white toggle-termines" data-bs-toggle="collapse" data-bs-target="#listeTermines" style="color:#1a7a1a; cursor:pointer;">
+                <i class="bi bi-check-circle-fill me-2"></i>Déjà évalués ({{ termines|length }})
+                <i class="bi bi-chevron-down float-end"></i>
+            </div>
+            <div class="collapse" id="listeTermines">
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="p-3">#</th>
+                                <th class="p-3">Documents</th>
+                                <th class="p-3">Mon écrit</th>
+                                <th class="p-3">Mon oral</th>
+                                <th class="p-3">Note finale</th>
+                                <th class="p-3 text-end">Modifier</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for candidature in termines %}
+                                {% set monEvaluation = evaluationsParCandidature[candidature.id] ?? null %}
+                                {% set docsMasques = ['identityFile', 'diplomaFile', 'cvFile'] %}
+                                {% set docsVisibles = candidature.document|filter(doc => doc.type not in docsMasques) %}
+                                <tr>
+                                    <td class="p-3 align-middle">{{ loop.index }}</td>
+                                    <td class="p-3 align-middle">
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for doc in docsVisibles %}
+                                                <a href="{{ asset(doc.chemin) }}" target="_blank" class="btn btn-outline-success btn-sm">
+                                                    <i class="bi bi-file-earmark-pdf me-1"></i>{{ doc.type ?? 'Pièce' }}
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted small">—</span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td class="p-3 align-middle">{{ monEvaluation.noteEcrite }}/20</td>
+                                    <td class="p-3 align-middle">{{ monEvaluation.noteOrale }}/20</td>
+                                    <td class="p-3 align-middle">
+                                        {% if candidature.note is not null %}
+                                            <span class="badge bg-primary">{{ candidature.note }}/20</span>
+                                        {% else %}
+                                            <span class="text-muted small">En attente des autres jurys</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-3 align-middle text-end">
+                                        <a href="{{ path('jury_noter', {'id': candidature.id}) }}" class="btn btn-outline-secondary btn-sm" title="Modifier l'écrit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{{ path('jury_noter_oral', {'id': candidature.id}) }}" class="btn btn-outline-secondary btn-sm" title="Modifier l'oral">
+                                            <i class="bi bi-mic"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if aEvaluer is empty and termines is empty %}
+        <div class="card shadow border-0 rounded-4">
+            <p class="text-center p-4 text-muted mb-0">Aucune candidature validée disponible pour évaluation.</p>
+        </div>
+    {% endif %}
 </div>
 
 <footer>
@@ -182,6 +216,13 @@
             setTimeout(() => t.style.display = 'none', 500);
         });
     }, 4000);
+
+    const toggle = document.querySelector('.toggle-termines');
+    const collapseEl = document.getElementById('listeTermines');
+    if (toggle && collapseEl) {
+        collapseEl.addEventListener('show.bs.collapse', () => toggle.classList.add('open'));
+        collapseEl.addEventListener('hide.bs.collapse', () => toggle.classList.remove('open'));
+    }
 </script>
 </body>
 </html>

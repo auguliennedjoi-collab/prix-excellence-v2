@@ -16,6 +16,27 @@
         .critere-row .max-badge { font-size: 12px; color: #1a7a1a; font-weight: bold; }
         #recap-box { background: #f0f9f0; border: 2px dashed #1a7a1a; border-radius: 12px; }
         #note-ecrite-affichee { font-size: 2rem; font-weight: bold; color: #1a7a1a; }
+
+        /* Champ de note invalide (note > max ou < 0) */
+        .note-critere.is-invalid-note {
+            border-color: #dc3545 !important;
+            color: #dc3545 !important;
+            background-color: #fff5f5 !important;
+            font-weight: bold;
+        }
+        .note-critere.is-invalid-note:focus {
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+        }
+        .erreur-note-msg {
+            color: #dc3545;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 2px;
+            display: none;
+        }
+        .erreur-note-msg.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -92,6 +113,7 @@
                                                step="0.01"
                                                value="{{ noteExistante }}"
                                                required>
+                                        <div class="erreur-note-msg">Note supérieure au maximum autorisé</div>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -113,6 +135,7 @@
                                        step="0.01"
                                        value="{{ noteExistante }}"
                                        required>
+                                <div class="erreur-note-msg">Note supérieure au maximum autorisé</div>
                             </div>
                         </div>
                     {% endif %}
@@ -125,7 +148,7 @@
             <div id="note-ecrite-affichee">--/20</div>
         </div>
 
-        <button type="submit" class="btn btn-success btn-lg w-100">
+        <button type="submit" class="btn btn-success btn-lg w-100" id="btn-valider-notes">
             <i class="bi bi-check-circle me-2"></i>Valider les notes écrites
         </button>
     </form>
@@ -152,9 +175,22 @@
         document.querySelectorAll('.note-critere').forEach(input => {
             const val = parseFloat(input.value.replace(',', '.'));
             const max = parseFloat(input.dataset.max);
-            if (isNaN(val) || val < 0 || val > max) {
+            const msgEl = input.closest('.col-md-4').querySelector('.erreur-note-msg');
+
+            const estInvalide = isNaN(val) || val < 0 || val > max;
+
+            if (estInvalide) {
                 ecritValide = false;
+                input.classList.add('is-invalid-note');
+                // On n'affiche le message d'erreur que si une note est saisie et dépasse le max
+                if (!isNaN(val) && val > max) {
+                    if (msgEl) msgEl.classList.add('visible');
+                } else if (msgEl) {
+                    msgEl.classList.remove('visible');
+                }
             } else {
+                input.classList.remove('is-invalid-note');
+                if (msgEl) msgEl.classList.remove('visible');
                 totalEcrit += val;
             }
         });
@@ -163,14 +199,31 @@
 
         if (!ecritValide) {
             affichage.textContent = '--/20';
-            return;
+        } else {
+            affichage.textContent = totalEcrit.toFixed(2) + '/20';
         }
 
-        affichage.textContent = totalEcrit.toFixed(2) + '/20';
+        document.getElementById('btn-valider-notes').disabled = !ecritValide;
     }
 
     document.querySelectorAll('.note-critere').forEach(input => {
         input.addEventListener('input', calculerTotalEcrit);
+    });
+
+    // Sécurité supplémentaire : bloque toute soumission si une note dépasse le max
+    document.getElementById('form-evaluation').addEventListener('submit', function (e) {
+        let ok = true;
+        document.querySelectorAll('.note-critere').forEach(input => {
+            const val = parseFloat(input.value.replace(',', '.'));
+            const max = parseFloat(input.dataset.max);
+            if (isNaN(val) || val < 0 || val > max) {
+                ok = false;
+            }
+        });
+        if (!ok) {
+            e.preventDefault();
+            alert('Une ou plusieurs notes dépassent le maximum autorisé. Merci de corriger avant de valider.');
+        }
     });
 
     calculerTotalEcrit();

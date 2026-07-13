@@ -25,6 +25,7 @@
     <div class="collapse navbar-collapse">
         <ul class="navbar-nav ms-auto gap-2">
             <li class="nav-item"><a class="nav-link" href="{{ path('admin_candidats') }}"><i class="bi bi-folder me-1"></i>Dossiers</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ path('admin_depouillement') }}"><i class="bi bi-trophy me-1"></i>Dépouillement</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a></li>
         </ul>
     </div>
@@ -46,11 +47,10 @@
 
 <div class="container py-5 flex-grow-1" style="max-width: 950px;">
     <h4 class="fw-bold mb-1" style="color:#1a7a1a;">
-        <i class="bi bi-shield-exclamation me-2"></i>Gestion du plagiat — Finalistes
+        <i class="bi bi-shield-exclamation me-2"></i>La Gestion du plagiat — Finalistes
     </h4>
     <p class="text-muted mb-4">
-        Renseignez le taux de plagiat constaté pour chaque finaliste, puis éliminez ceux jugés trop suspects.
-        La liste se complète automatiquement avec les candidats suivants du classement pour toujours atteindre 5 finalistes actifs.
+        Renseignez le taux de plagiat constaté pour chaque finaliste. Une fois TOUS les taux saisis, lancez l'élimination automatique des candidats les plus suspects, jusqu'à obtenir 5 finalistes.
     </p>
 
     {% if edition is null %}
@@ -59,6 +59,26 @@
             Aucune présélection disponible pour le moment. Les jurys doivent d'abord terminer toutes les évaluations (écrit + oral).
         </div>
     {% else %}
+
+      <div class="d-flex justify-content-end mb-3">
+            <a href="{{ path('admin_plagiat_lancer_elimination') }}"
+               class="btn btn-danger"
+               onclick="return confirm('❌ Confirmer l\'élimination des candidats ayant le taux de plagiat le plus élevé ?');">
+                <i class="bi bi-x-circle-fill me-2"></i> Lancer l'élimination
+            </a>
+        </div>
+
+        {% if tousTauxSaisis %}
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                Tous les taux de plagiat ont été saisis. Vous pouvez lancer l'élimination automatique.
+            </div>
+        {% elseif pool|length > 5 %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                Renseignez le taux de plagiat de <strong>tous</strong> les candidats ci-dessous pour débloquer l'élimination automatique.
+            </div>
+        {% endif %}
 
         <div class="card shadow border-0 rounded-4 mb-4">
             <div class="card-header fw-bold" style="background-color:#1a7a1a; color:white;">
@@ -75,7 +95,6 @@
                                 <th>Candidat</th>
                                 <th>Note finale</th>
                                 <th>Taux de plagiat</th>
-                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -94,18 +113,12 @@
                                                    class="form-control form-control-sm taux-input"
                                                    min="0" max="100" step="0.01"
                                                    value="{{ candidature.tauxPlagiat }}"
-                                                   placeholder="%">
+                                                   placeholder="%"
+                                                   required>
                                             <button type="submit" class="btn btn-sm btn-outline-secondary">
                                                 <i class="bi bi-save"></i>
                                             </button>
                                         </form>
-                                    </td>
-                                    <td class="text-end">
-                                        <a href="{{ path('admin_plagiat_eliminer', {id: candidature.id}) }}"
-                                           class="btn btn-sm btn-danger"
-                                           onclick="return confirm('Éliminer {{ candidature.candidat.prenoms }} {{ candidature.candidat.nom }} pour plagiat ? Le candidat suivant du classement sera automatiquement ajouté à la liste.');">
-                                            <i class="bi bi-x-circle me-1"></i>Éliminer
-                                        </a>
                                     </td>
                                 </tr>
                             {% endfor %}

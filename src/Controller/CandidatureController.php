@@ -169,17 +169,19 @@ final class CandidatureController extends AbstractController
                             $this->uploadsDirectory,
                             $newFilename,
                         );
+$document = new Document();
 
-                        $document = new Document();
-                        $document->setNom($originalFilename);
-                        $document->setType($field);
-                        $document->setChemin(
-                            "uploads/documents/" . $newFilename,
-                        );
-                        $document->setCandidat($candidat);
-                        $document->setCandidature($candidature);
+$document->setNom($originalFilename);
+$document->setType($field);
 
-                        $em->persist($document);
+// Enregistrer uniquement le chemin relatif
+$document->setChemin("documents/" . $newFilename);
+
+$document->setCandidat($candidat);
+$document->setCandidature($candidature);
+
+$em->persist($document);
+                       
                     } catch (FileException $e) {
                         $this->addFlash(
                             "danger",

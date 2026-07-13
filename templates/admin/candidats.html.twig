@@ -12,6 +12,17 @@
         .navbar-brand, .nav-link { color: white !important; }
         .nav-link:hover { color: #FFD700 !important; }
         footer { background-color: #1a7a1a; color: white; padding: 15px; text-align: center; margin-top: auto; }
+
+        /* Lignes alternées gris / bleu */
+        .table tbody tr:nth-child(odd) td {
+            background-color: #f1f3f5;
+        }
+        .table tbody tr:nth-child(even) td {
+            background-color: #e7f1fb;
+        }
+        .table-hover tbody tr:hover td {
+            background-color: #d6e9fc !important;
+        }
     </style>
 </head>
 <body>
@@ -106,8 +117,8 @@
                         <td class="p-3">
                             {# Boucle dynamique sur la collection de documents de la candidature #}
                             {% for doc in candidature.document %}
-                                <a href="/uploads/{{ doc.chemin }}" target="_blank" class="btn btn-outline-secondary btn-sm mb-1" title="{{ doc.nom }} ({{ doc.type }})">
-                                    {% if 'cv' in doc.type|lower or 'cv' in doc.nom|lower %}
+                            <a href="{{ asset('uploads/' ~ doc.chemin) }}" target="_blank" class="btn btn-outline-secondary btn-sm mb-1">
+                 {% if 'cv' in doc.type|lower or 'cv' in doc.nom|lower %}
                                         <i class="bi bi-person-vcard"></i>
                                     {% elseif 'diplome' in doc.type|lower %}
                                         <i class="bi bi-award"></i>

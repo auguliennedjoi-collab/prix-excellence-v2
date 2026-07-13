@@ -446,8 +446,7 @@ public function candidats(
     /**
      * Page listant le pool de candidats actuellement présélectionnés
      * (statut PRESELECTIONNE), pour que l'admin y renseigne le taux de
-     * plagiat et élimine ceux jugés trop suspects. Liste aussi
-     * l'historique des candidats déjà éliminés pour plagiat.
+     * plagiat. Liste aussi l'historique des candidats déjà éliminés.
      */
     #[Route("/plagiat", name: "plagiat")]
     public function plagiat(EntityManagerInterface $em): Response
@@ -459,6 +458,7 @@ public function candidats(
                 "edition" => null,
                 "pool" => [],
                 "elimines" => [],
+                "tousTauxSaisis" => false,
             ]);
         }
 
@@ -476,16 +476,27 @@ public function candidats(
             StatutTraitement::ELIMINE_PLAGIAT,
         );
 
+        // Le bouton "Lancer l'élimination" n'apparaît que si TOUS les
+        // candidats du pool ont un taux de plagiat renseigné, et qu'il
+        // reste plus de 5 candidats actifs (sinon rien à éliminer).
+        $tousTauxSaisis = count($pool) > 5;
+        foreach ($pool as $candidature) {
+            if ($candidature->getTauxPlagiat() === null) {
+                $tousTauxSaisis = false;
+                break;
+            }
+        }
+
         return $this->render("admin/plagiat.html.twig", [
             "edition" => $edition,
             "pool" => $pool,
             "elimines" => $elimines,
+            "tousTauxSaisis" => $tousTauxSaisis,
         ]);
     }
 
     /**
-     * Enregistre le taux de plagiat constaté par l'admin pour un candidat,
-     * sans forcément l'éliminer (décision manuelle séparée).
+     * Enregistre le taux de plagiat constaté par l'admin pour un candidat.
      */
     #[Route("/plagiat/{id}/taux", name: "plagiat_taux", methods: ["POST"])]
     public function definirTauxPlagiat(
@@ -525,31 +536,70 @@ public function candidats(
     }
 
     /**
-     * Élimine un candidat pour plagiat. Le système va alors chercher
-     * automatiquement le(s) candidat(s) suivant(s) du classement général
-     * (parmi les NON_RETENU) pour compléter la liste jusqu'à obtenir
-     * à nouveau 5 finalistes actifs.
+     * Élimine automatiquement les candidats ayant les taux de plagiat les
+     * plus élevés du pool, jusqu'à revenir à 5 finalistes actifs.
+     * Nécessite que TOUS les candidats du pool aient un taux renseigné.
      */
-    #[Route("/plagiat/{id}/eliminer", name: "plagiat_eliminer")]
-    public function eliminerPourPlagiat(
-        Candidature $candidature,
-        EntityManagerInterface $em,
-    ): Response {
-        $edition = $candidature->getEdition();
+    #[Route("/plagiat/lancer-elimination", name: "plagiat_lancer_elimination")]
+    public function lancerEliminationPlagiat(EntityManagerInterface $em): Response
+    {
+        $edition = $this->getEditionAvecPreselection($em);
 
-        $candidature->setStatutTraitement(StatutTraitement::ELIMINE_PLAGIAT);
-        $em->flush();
+        if (!$edition) {
+            $this->addFlash("warning", "⚠️ Aucun pool de présélection disponible.");
+            return $this->redirectToRoute("admin_plagiat");
+        }
 
-        $candidat = $candidature->getCandidat();
-        $this->addFlash(
-            "danger",
-            "❌ " . $candidat->getPrenoms() . " " . $candidat->getNom() .
-                " a été éliminé(e) pour plagiat.",
+        $pool = $this->getCandidaturesParStatut(
+            $edition,
+            StatutTraitement::PRESELECTIONNE,
         );
 
-        if ($edition) {
-            $this->completerPoolFinalistes($edition, $em);
+        $cible = 5;
+
+        if (count($pool) <= $cible) {
+            $this->addFlash(
+                "info",
+                "ℹ️ Il y a déjà " . count($pool) . " finaliste(s) ou moins, aucune élimination nécessaire.",
+            );
+            return $this->redirectToRoute("admin_plagiat");
         }
+
+        foreach ($pool as $candidature) {
+            if ($candidature->getTauxPlagiat() === null) {
+                $this->addFlash(
+                    "warning",
+                    "⚠️ Merci de renseigner le taux de plagiat de TOUS les candidats du pool avant de lancer l'élimination.",
+                );
+                return $this->redirectToRoute("admin_plagiat");
+            }
+        }
+
+        // Trie par taux de plagiat décroissant : les plus suspects en premier
+        usort(
+            $pool,
+            fn(Candidature $a, Candidature $b) => $b->getTauxPlagiat() <=> $a->getTauxPlagiat(),
+        );
+
+        $nombreAEliminer = count($pool) - $cible;
+        $aEliminer = array_slice($pool, 0, $nombreAEliminer);
+
+        $noms = [];
+        foreach ($aEliminer as $candidature) {
+            $candidature->setStatutTraitement(StatutTraitement::ELIMINE_PLAGIAT);
+            $candidat = $candidature->getCandidat();
+            $noms[] = $candidat->getPrenoms() . " " . $candidat->getNom() .
+                " (" . $candidature->getTauxPlagiat() . "%)";
+        }
+
+        $em->flush();
+
+        $this->addFlash(
+            "danger",
+            "❌ Éliminé(s) automatiquement pour le taux de plagiat le plus élevé : " . implode(", ", $noms) . ".",
+        );
+
+        $this->completerPoolFinalistes($edition, $em);
 
         return $this->redirectToRoute("admin_plagiat");
     }
@@ -562,7 +612,7 @@ public function candidats(
             ->findOneBy(["statutTraitement" => StatutTraitement::PRESELECTIONNE]);
 
         return $candidature?->getEdition();
-    }
+        }
 
     /**
      * @return Candidature[]
@@ -628,10 +678,100 @@ public function candidats(
                 fn(Candidature $c) => $c->getCandidat()->getPrenoms() . " " . $c->getCandidat()->getNom(),
                 $aAjouter,
             );
+
             $this->addFlash(
                 "info",
                 "ℹ️ Complété automatiquement avec : " . implode(", ", $noms) . ".",
             );
         }
+    }
+
+    // ==========================================================
+    // DÉPOUILLEMENT FINAL
+    // ==========================================================
+
+    /**
+     * Page de dépouillement : classement final des finalistes actifs,
+     * avec identité complète révélée. Permet de déclarer les lauréats.
+     */
+    #[Route("/depouillement", name: "depouillement")]
+    public function depouillement(EntityManagerInterface $em): Response
+    {
+        $edition = $this->getEditionAvecPreselection($em);
+
+        if (!$edition) {
+            return $this->render("admin/depouillement.html.twig", [
+                "edition" => null,
+                "finalistes" => [],
+                "laureats" => [],
+            ]);
+        }
+
+        $finalistes = $this->getCandidaturesParStatut(
+            $edition,
+            StatutTraitement::PRESELECTIONNE,
+        );
+        usort(
+            $finalistes,
+            fn(Candidature $a, Candidature $b) => $b->getNote() <=> $a->getNote(),
+        );
+
+        $laureats = $this->getCandidaturesParStatut(
+            $edition,
+            StatutTraitement::LAUREAT,
+        );
+        usort(
+            $laureats,
+            fn(Candidature $a, Candidature $b) => $b->getNote() <=> $a->getNote(),
+        );
+
+        return $this->render("admin/depouillement.html.twig", [
+            "edition" => $edition,
+            "finalistes" => $finalistes,
+            "laureats" => $laureats,
+        ]);
+    }
+
+    /**
+     * Déclare un finaliste comme lauréat officiel du prix.
+     */
+    #[Route("/depouillement/{id}/declarer-laureat", name: "declarer_laureat")]
+    public function declarerLaureat(
+        Candidature $candidature,
+        EntityManagerInterface $em,
+    ): Response {
+        $candidature->setStatutTraitement(StatutTraitement::LAUREAT);
+        $em->flush();
+
+        $candidat = $candidature->getCandidat();
+        $this->addFlash(
+            "success",
+            "🏆 " . $candidat->getPrenoms() . " " . $candidat->getNom() .
+                " a été déclaré(e) Lauréat(e) du Prix d'Excellence.",
+        );
+
+        return $this->redirectToRoute("admin_depouillement");
+    }
+
+    /**
+     * Annule la déclaration de lauréat (retour au statut présélectionné,
+     * en cas d'erreur de manipulation).
+     */
+    #[Route("/depouillement/{id}/annuler-laureat", name: "annuler_laureat")]
+    public function annulerLaureat(
+        Candidature $candidature,
+        EntityManagerInterface $em,
+    ): Response {
+        $candidature->setStatutTraitement(StatutTraitement::PRESELECTIONNE);
+        $em->flush();
+
+        $candidat = $candidature->getCandidat();
+        $this->addFlash(
+            "warning",
+            "↩️ Statut de " . $candidat->getPrenoms() . " " . $candidat->getNom() .
+                " remis à \"Présélectionné\".",
+        );
+
+        return $this->redirectToRoute("admin_depouillement");
     }
 }
