@@ -7,7 +7,6 @@ use App\Enum\StatutTraitement;
 use App\Repository\CandidatureRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Tes\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\UuidV7 as Uuid;
 
@@ -31,6 +30,8 @@ class Candidature
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $codeSuivi = null;
+    #[ORM\Column(length: 20, nullable: true)]
+private ?string $codeAnonymat = null;
 
     /**
      * Note finale du candidat (75% écrit général + 25% oral unique).
@@ -197,6 +198,16 @@ class Candidature
         return $this;
     }
 
+public function getCodeAnonymat(): ?string
+{
+    return $this->codeAnonymat;
+}
+
+public function setCodeAnonymat(?string $codeAnonymat): static
+{
+    $this->codeAnonymat = $codeAnonymat;
+    return $this;
+}
     public function getNote(): ?float
     {
         return $this->note;

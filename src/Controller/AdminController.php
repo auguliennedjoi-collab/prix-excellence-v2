@@ -23,6 +23,25 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 #[IsGranted("ROLE_ADMIN")]
 class AdminController extends AbstractController
 {
+    /**
+     * Vue imprimable de la liste complète des dossiers de candidature
+     * (tous statuts confondus, sans pagination).
+     */
+    #[Route("/candidats/imprimer", name: "candidats_imprimer")]
+    public function imprimerCandidats(EntityManagerInterface $em): Response
+    {
+        $repo = $em->getRepository(Candidature::class);
+
+        $candidatures = $repo->createQueryBuilder("c")
+            ->join("c.candidat", "cand")
+            ->orderBy("c.dateSoumission", "DESC")
+            ->getQuery()
+            ->getResult();
+
+        return $this->render("admin/candidats_impression.html.twig", [
+            "candidatures" => $candidatures,
+        ]);
+    }
     #[Route("", name: "index")]
     public function index(EntityManagerInterface $em): Response
     {
@@ -89,34 +108,67 @@ public function candidats(
     ]);
 }
 
-    #[Route("/candidat/{id}/valider", name: "valider")]
-    public function valider(
-        Candidature $candidature,
-        EntityManagerInterface $em,
-    ): Response {
-        if (!$candidature) {
-            $this->addFlash("danger", "❌ Candidature introuvable.");
-            return $this->redirectToRoute("admin_candidats");
-        }
-
-        $candidature->setStatutDemande(StatutDemande::VALIDE);
-        $candidature->setStatutTraitement(StatutTraitement::EN_ATTENTE);
-
-
-        $em->flush();
-
-        $candidat = $candidature->getCandidat();
-        $this->addFlash(
-            "success",
-            "✅ La candidature de " .
-                $candidat->getPrenoms() .
-                " " .
-                $candidat->getNom() .
-                " a été validée administrativement "
-        );
-
+  #[Route("/candidat/{id}/valider", name: "valider")]
+public function valider(
+    Candidature $candidature,
+    EntityManagerInterface $em,
+): Response {
+    if (!$candidature) {
+        $this->addFlash("danger", "❌ Candidature introuvable.");
         return $this->redirectToRoute("admin_candidats");
     }
+
+    $candidature->setStatutDemande(StatutDemande::VALIDE);
+    $candidature->setStatutTraitement(StatutTraitement::EN_ATTENTE);
+
+    // Attribution du code d'anonymat au format JUR-2026-014
+    if (!$candidature->getCodeAnonymat()) {
+        $candidature->setCodeAnonymat(
+            $this->genererCodeAnonymat($candidature, $em),
+        );
+    }
+
+    $em->flush();
+
+    $candidat = $candidature->getCandidat();
+    $this->addFlash(
+        "success",
+        "✅ La candidature de " . $candidat->getPrenoms() . " " . $candidat->getNom() .
+            " a été validée administrativement (code jury : " . $candidature->getCodeAnonymat() . ")",
+    );
+
+    return $this->redirectToRoute("admin_candidats");
+}
+
+/**
+ * Génère un code d'anonymat au format JUR-{année}-{numéro sur 3 chiffres},
+ * unique et séquentiel au sein de l'édition.
+ */
+private function genererCodeAnonymat(Candidature $candidature, EntityManagerInterface $em): string
+{
+    $edition = $candidature->getEdition();
+    $annee = $edition->getAnnee();
+
+    $codesExistants = $em->getRepository(Candidature::class)->createQueryBuilder("c")
+        ->select("c.codeAnonymat")
+        ->andWhere("c.edition = :edition")
+        ->andWhere("c.codeAnonymat IS NOT NULL")
+        ->setParameter("edition", $edition)
+        ->getQuery()
+        ->getSingleColumnResult();
+
+    $dernierNumero = 0;
+    foreach ($codesExistants as $code) {
+        // Extrait le numéro final de JUR-2026-014 -> 14
+        if (preg_match('/-(\d+)$/', $code, $matches)) {
+            $dernierNumero = max($dernierNumero, (int) $matches[1]);
+        }
+    }
+
+    $prochainNumero = $dernierNumero + 1;
+
+    return sprintf("CAN-%s-%03d", $annee, $prochainNumero);
+}
 
     #[Route("/candidat/{id}/rejeter", name: "rejeter")]
     public function rejeter(
@@ -686,7 +738,7 @@ public function candidats(
         }
     }
 
-    // ==========================================================
+   // ==========================================================
     // DÉPOUILLEMENT FINAL
     // ==========================================================
 
@@ -704,6 +756,7 @@ public function candidats(
                 "edition" => null,
                 "finalistes" => [],
                 "laureats" => [],
+                "classementImpression" => [],
             ]);
         }
 
@@ -725,11 +778,78 @@ public function candidats(
             fn(Candidature $a, Candidature $b) => $b->getNote() <=> $a->getNote(),
         );
 
+        // Classement groupé (gère les ex-æquo : même note => même rang,
+        // candidats fusionnés sur la même ligne pour l'impression du PV)
+        $classementImpression = $this->calculerClassementGroupe($finalistes);
+
         return $this->render("admin/depouillement.html.twig", [
             "edition" => $edition,
             "finalistes" => $finalistes,
             "laureats" => $laureats,
+            "classementImpression" => $classementImpression,
         ]);
+    }
+
+  /**
+     * Regroupe les candidatures triées (note décroissante) par rang,
+     * en fusionnant les ex-æquo (même note = même rang) sur une même ligne.
+     * Chaque candidature est accompagnée de son "numéro d'identification"
+     * extrait de son codeSuivi (ex: PRIX-ECS-2026-0008 -> 8).
+     *
+     * @param Candidature[] $finalistes Déjà triés par note décroissante
+     * @return array<int, array{rang: int, rangLabel: string, candidatures: array}>
+     */
+    private function calculerClassementGroupe(array $finalistes): array
+    {
+        $groupes = [];
+        $derniereNote = null;
+
+        foreach ($finalistes as $index => $candidature) {
+            $note = $candidature->getNote();
+
+            if ($derniereNote === null || $note !== $derniereNote) {
+                $rangCourant = $index + 1; // classement olympique (1,2,2,4...)
+                $groupes[] = [
+                    "rang" => $rangCourant,
+                    "rangLabel" => $this->formatRang($rangCourant),
+                    "candidatures" => [],
+                ];
+            }
+
+            $groupes[count($groupes) - 1]["candidatures"][] = [
+                "candidature" => $candidature,
+                "numero" => $this->extraireNumeroIdentification($candidature),
+            ];
+            $derniereNote = $note;
+        }
+
+        return $groupes;
+    }
+
+    /**
+     * Extrait le numéro d'identification du candidat depuis son codeSuivi.
+     * Format attendu : PRIX-ECS-2026-0008 -> "8"
+     */
+    private function extraireNumeroIdentification(Candidature $candidature): string
+    {
+        $code = $candidature->getCodeSuivi();
+        if (!$code) {
+            return "—";
+        }
+
+        $segments = explode("-", $code);
+        $dernier = end($segments);
+
+        // Retire les zéros de tête (0008 -> 8), garde tel quel si non numérique
+        return ctype_digit($dernier) ? (string) (int) $dernier : $dernier;
+    }
+
+    /**
+     * Formate un rang numérique en ordinal français (1er, 2ème, 3ème...).
+     */
+    private function formatRang(int $rang): string
+    {
+        return $rang . ($rang === 1 ? "er" : "ème");
     }
 
     /**

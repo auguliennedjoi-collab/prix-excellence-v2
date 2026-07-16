@@ -16,6 +16,26 @@
         .rang-badge.or { background: #FFD700; color: #1a7a1a; }
         .laureat-row { background: #fff9e6 !important; }
 
+        /* Tableau PV d'impression (format officiel) */
+        .pv-title-primary { color: #0033cc; font-weight: 700; }
+        .pv-title-secondary { color: #c00000; font-weight: 700; }
+        .pv-table thead th {
+            background-color: #6699cc;
+            color: #000;
+            font-weight: 700;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #333;
+        }
+        .pv-table td {
+            border: 1px solid #333;
+            vertical-align: middle;
+        }
+        .pv-table tbody tr:nth-child(odd) { background-color: #dbe6f4; }
+        .pv-table tbody tr:nth-child(even) { background-color: #eef3fa; }
+        .pv-num { text-align: center; font-weight: 600; width: 15%; }
+        .pv-rang { text-align: center; font-weight: 700; width: 15%; }
+
         @media print {
             .no-print { display: none !important; }
             body { background: white; }
@@ -65,11 +85,6 @@
         Classement final des candidats, identités révélées. Déclarez ici le ou les lauréats officiels du prix.
     </p>
 
-    <div class="text-center mb-4 d-none d-print-block">
-        <h3 class="fw-bold">Procès-verbal de dépouillement</h3>
-        <p class="text-muted">Prix d'Excellence Droit-Justice-Paix — Cour Suprême du Bénin</p>
-    </div>
-
     {% if edition is null %}
         <div class="alert alert-warning">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -77,8 +92,11 @@
         </div>
     {% else %}
 
+        {# ============================================================ #}
+        {# BLOC ÉCRAN : gestion interactive des lauréats (masqué à l'impression) #}
+        {# ============================================================ #}
         {% if laureats is not empty %}
-            <div class="card shadow border-0 rounded-4 mb-4">
+            <div class="card shadow border-0 rounded-4 mb-4 no-print">
                 <div class="card-header fw-bold" style="background-color:#FFD700; color:#1a7a1a;">
                     <i class="bi bi-trophy-fill me-2"></i>Lauréat(s) du Prix d'Excellence
                 </div>
@@ -88,7 +106,7 @@
                             <tr>
                                 <th>Candidat</th>
                                 <th>Note finale</th>
-                                <th class="text-end no-print">Actions</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -99,7 +117,7 @@
                                         <div class="small text-muted font-monospace">{{ candidature.codeSuivi }}</div>
                                     </td>
                                     <td><span class="badge bg-success">{{ candidature.note }}/20</span></td>
-                                    <td class="text-end no-print">
+                                    <td class="text-end">
                                         <a href="{{ path('admin_annuler_laureat', {id: candidature.id}) }}"
                                            class="btn btn-sm btn-outline-secondary"
                                            onclick="return confirm('Annuler la déclaration de lauréat pour {{ candidature.candidat.prenoms }} {{ candidature.candidat.nom }} ?');">
@@ -114,7 +132,7 @@
             </div>
         {% endif %}
 
-        <div class="card shadow border-0 rounded-4">
+        <div class="card shadow border-0 rounded-4 no-print">
             <div class="card-header fw-bold" style="background-color:#1a7a1a; color:white;">
                 <i class="bi bi-list-ol me-2"></i>Classement des finalistes ({{ finalistes|length }})
             </div>
@@ -130,8 +148,7 @@
                                 <th>Écrit général</th>
                                 <th>Oral général</th>
                                 <th>Note finale</th>
-                               
-                                <th class="text-end no-print">Actions</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -147,8 +164,7 @@
                                     <td>{{ candidature.noteEcriteGenerale }}/20</td>
                                     <td>{{ candidature.noteOrale }}/20</td>
                                     <td><span class="badge bg-primary">{{ candidature.note }}/20</span></td>
-                                    
-                                    <td class="text-end no-print">
+                                    <td class="text-end">
                                         <a href="{{ path('admin_declarer_laureat', {id: candidature.id}) }}"
                                            class="btn btn-sm btn-warning"
                                            onclick="return confirm('Déclarer {{ candidature.candidat.prenoms }} {{ candidature.candidat.nom }} comme Lauréat(e) officiel(le) ?');">
@@ -163,11 +179,51 @@
             </div>
         </div>
 
-        <div class="mt-5 d-none d-print-block">
-            <div class="row">
+        {# ============================================================ #}
+        {# BLOC IMPRESSION : PV officiel au format demandé              #}
+        {# Visible uniquement à l'impression (masqué à l'écran)         #}
+        {# ============================================================ #}
+               <div class="d-none d-print-block">
+            <div class="text-center mb-4">
+                <h3 class="pv-title-primary mb-1">Prix d'excellence</h3>
+                <h4 class="pv-title-secondary mb-2">Droit-Justice-Paix de la Cour suprême du Bénin</h4>
+                <h5 class="text-uppercase fw-bold">Résultats définitifs</h5>
+            </div>
+
+            <table class="table pv-table mb-4">
+                <thead>
+                    <tr>
+                        <th class="pv-num">N° IDENTIFICATION</th>
+                        <th>NOM &amp; PRENOMS</th>
+                        <th class="pv-rang">RANG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in classementImpression %}
+                        <tr>
+                            <td class="pv-num">
+                                {% for item in ligne.candidatures %}
+                                    {{ item.numero }}{{ not loop.last ? ' / ' : '' }}
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% for item in ligne.candidatures %}
+                                    {{ item.candidature.candidat.nom }} {{ item.candidature.candidat.prenoms }}{{ not loop.last ? ' et ' : '' }}
+                                {% endfor %}
+                            </td>
+                            <td class="pv-rang">{{ ligne.rangLabel }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="row mt-5">
                 <div class="col-6 text-center">
                     <p class="mb-5">Les membres du Jury</p>
                     <p>_____________________</p>
+                </div>
+                <div class="col-6 text-center">
+                    <p class="mb-5">Fait à Cotonou, le {{ "now"|date("d/m/Y") }}</p>
                 </div>
             </div>
         </div>

@@ -7,7 +7,7 @@
 
 Application web de gestion de bout en bout du **Prix d'Excellence Droit-Justice-Paix**, développée pour la **Cour Suprême du Bénin**. Elle numérise l'intégralité du processus du concours : dépôt de candidature, vérification administrative, évaluation anonyme par un jury, gestion du plagiat, et présélection des finalistes — depuis le dépôt du dossier jusqu'à la délibération.
 
-Ce projet a été réalisé dans le cadre d'un mémoire de fin de cycle en **Informatique de Gestion** à l'**ENEAM** (École Nationale d'Économie Appliquée et de Management), **Université d'Abomey-Calavi**, Bénin.
+Ce projet a été réalisé dans le cadre d'un mémoire de fin de cycle licence 2 en **Informatique de Gestion** à l'**ENEAM** (École Nationale d'Économie Appliquée et de Management), **Université d'Abomey-Calavi**, Bénin.
 
 ## Sommaire
 

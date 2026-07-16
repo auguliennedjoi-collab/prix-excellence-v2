@@ -175,8 +175,7 @@ $document->setNom($originalFilename);
 $document->setType($field);
 
 // Enregistrer uniquement le chemin relatif
-$document->setChemin("documents/" . $newFilename);
-
+$document->setChemin("uploads/documents/" . $newFilename);
 $document->setCandidat($candidat);
 $document->setCandidature($candidature);
 

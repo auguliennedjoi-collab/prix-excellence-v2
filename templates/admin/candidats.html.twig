@@ -56,23 +56,27 @@
     {% endfor %}
 </div>
 
-<div class="container py-4 flex-grow-1">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <h4 class="fw-bold mb-0" style="color:#1a7a1a;"><i class="bi bi-collection-fill me-2"></i>Dossiers de Candidature</h4>
-    <form method="get" action="{{ path('admin_candidats') }}" class="d-flex gap-2">
-        {% if statut is defined and statut %}
-            <input type="hidden" name="statut" value="{{ statut }}">
-        {% endif %}
-        <input type="text" name="recherche" value="{{ recherche|default('') }}" class="form-control" placeholder="Rechercher (nom, email, code...)" style="min-width:280px;">
-        <button type="submit" class="btn btn-success">
-            <i class="bi bi-search"></i>
-        </button>
-        {% if recherche is defined and recherche %}
-            <a href="{{ path('admin_candidats') }}" class="btn btn-outline-secondary" title="Réinitialiser">
-                <i class="bi bi-x-lg"></i>
-            </a>
-        {% endif %}
-    </form>
+    <div class="d-flex gap-2 flex-wrap">
+        <form method="get" action="{{ path('admin_candidats') }}" class="d-flex gap-2">
+            {% if statut is defined and statut %}
+                <input type="hidden" name="statut" value="{{ statut }}">
+            {% endif %}
+            <input type="text" name="recherche" value="{{ recherche|default('') }}" class="form-control" placeholder="Rechercher (nom, email, code...)" style="min-width:280px;">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-search"></i>
+            </button>
+            {% if recherche is defined and recherche %}
+                <a href="{{ path('admin_candidats') }}" class="btn btn-outline-secondary" title="Réinitialiser">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            {% endif %}
+        </form>
+        <a href="{{ path('admin_candidats_imprimer') }}" class="btn btn-outline-dark" title="Imprimer la liste complète">
+            <i class="bi bi-printer me-1"></i>Imprimer la liste
+        </a>
+    </div>
 </div>
 
     <div class="card shadow border-0 rounded-4">
@@ -117,7 +121,7 @@
                         <td class="p-3">
                             {# Boucle dynamique sur la collection de documents de la candidature #}
                             {% for doc in candidature.document %}
-                            <a href="{{ asset('uploads/' ~ doc.chemin) }}" target="_blank" class="btn btn-outline-secondary btn-sm mb-1">
+                         <a href="{{ asset(doc.chemin) }}" target="_blank" class="btn btn-outline-secondary btn-sm mb-1">
                  {% if 'cv' in doc.type|lower or 'cv' in doc.nom|lower %}
                                         <i class="bi bi-person-vcard"></i>
                                     {% elseif 'diplome' in doc.type|lower %}
