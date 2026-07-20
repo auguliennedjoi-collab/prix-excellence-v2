@@ -25,7 +25,7 @@
     </a>
     <div class="collapse navbar-collapse">
         <ul class="navbar-nav ms-auto gap-2">
-            <li class="nav-item"><a class="nav-link" href="{{ path('verificateur_index') }}"><i class="bi bi-speedometer2 me-1"></i>Tableau de bord</a></li>
+           <li class="nav-item"><a class="nav-link" href="{{ path('responsable_index') }}"><i class="bi bi-speedometer2 me-1"></i>Tableau de bord</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a></li>
         </ul>
     </div>
@@ -87,7 +87,7 @@
         <h5 class="fw-bold" style="color:#1a7a1a;">
             <i class="bi bi-trophy me-2"></i>Classement des évaluations
         </h5>
-        <a href="/responsable/recapitulatif" class="btn btn-outline-success btn-sm">
+       <a href="{{ path('responsable_recapitulatif') }}" class="btn btn-outline-success btn-sm">
             <i class="bi bi-file-earmark-pdf me-1"></i>Générer récapitulatif
         </a>
     </div>
@@ -145,7 +145,7 @@
                             </td>
                             <td class="p-3">
                                 {% if loop.first and candidature.note is not null and (candidature.statutTraitement is not defined or candidature.statutTraitement.value != 'LAUREAT') %}
-                                    <a href="{{ path('verificateur_proclamer', {'id': candidature.id}) }}"
+                                    <a href="{{ path('responsable_proclamer', {'id': candidature.id}) }}"
                                        class="btn btn-warning btn-sm fw-bold"
                                        onclick="return confirm('Proclamer ce candidat lauréat ?')">
                                         <i class="bi bi-trophy me-1"></i>Proclamer lauréat

@@ -45,19 +45,19 @@ class SecurityController extends AbstractController
             return $this->redirectToRoute("app_login");
         }
 
-        return match (true) {
-            // $this->isGranted('ROLE_SUPER_ADMIN')          => $this->redirectToRoute('admin_dashboard'),
-            $this->isGranted("ROLE_JURY") => $this->redirectToRoute(
-                "jury_index",
-            ),
-            $this->isGranted("ROLE_VERIFICATEUR") => $this->redirectToRoute(
-                "verificateur_index",
-            ),
-            $this->isGranted("ROLE_ADMIN") => $this->redirectToRoute(
-                "admin_index",
-            ),
-            default => $this->redirectToRoute("app_login"),
-        };
+       return match (true) {
+    // $this->isGranted('ROLE_SUPER_ADMIN')          => $this->redirectToRoute('admin_dashboard'),
+    $this->isGranted("ROLE_JURY") => $this->redirectToRoute(
+        "jury_index",
+    ),
+    $this->isGranted("ROLE_RESPONSABLE") => $this->redirectToRoute(
+        "responsable_index",
+    ),
+    $this->isGranted("ROLE_ADMIN") => $this->redirectToRoute(
+        "admin_index",
+    ),
+    default => $this->redirectToRoute("app_login"),
+};
     }
 
     #[Route(path: "/logout", name: "app_logout")]
